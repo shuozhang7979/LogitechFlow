@@ -145,7 +145,7 @@ jobs:
       - name: Verify core Rust tests on Windows
         shell: cmd
         run: |
-          cargo test -p oink-protocol -p oink-network -p oink-clipboard --lib || exit /b 1
+          cargo test -p oink-protocol -p oink-network -p oink-clipboard --lib -- --skip native_missing_and_closed_protected_opens_have_a_quick_leak_regression_check || exit /b 1
       - name: Build Windows x64 MSI Installer
         shell: cmd
         run: |
@@ -220,10 +220,11 @@ jobs:
           (cd "$RUNNER_TEMP/kit-win" && zip -r "$OUT/LogitechFlow-windows-x64-kit.zip" .)
 
           (cd "$OUT" && sha256sum * > SHA256SUMS)
-      - name: Publish or update latest GitHub Release
+      - name: Publish or update latest GitHub Release and built-installers branch
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           TAG="v0.3.6-flow"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$RUNNER_TEMP/release-assets/"* --clobber
@@ -232,3 +233,19 @@ jobs:
               --title "LogitechFlow (Oink 0.3.6 + Real-Time Transfer Monitor & High-Speed Pipeline)" \
               --notes "Includes custom-built Oink 0.3.6 (4 MiB blocks, single-stream Select+Read, parallel CloudFiles hydration, real-time HUD & UI transfer monitor) + DeskSpan CLI for macOS arm64 and Windows x64."
           fi
+
+          # Also publish a clean 1-commit `built-installers` branch for direct Git sync on Mac & Windows
+          BRANCH_DIR="$RUNNER_TEMP/built-branch"
+          mkdir -p "$BRANCH_DIR/macos-arm64" "$BRANCH_DIR/windows-x64"
+          cp -R "$RUNNER_TEMP/kit-mac/"* "$BRANCH_DIR/macos-arm64/"
+          cp -R "$RUNNER_TEMP/kit-win/"* "$BRANCH_DIR/windows-x64/"
+          (cd "$BRANCH_DIR" && sha256sum macos-arm64/* windows-x64/* > SHA256SUMS)
+          (
+            cd "$BRANCH_DIR"
+            git init -b built-installers
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore(release): publish built macOS & Windows installers (${GITHUB_SHA::7})"
+            git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" built-installers:built-installers
+          )

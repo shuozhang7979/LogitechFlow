@@ -1393,35 +1393,62 @@ impl Work {
         if file.withdrawn.load(Ordering::Acquire) || file.local_final.load(Ordering::Acquire) {
             return Err(crate::content::unavailable(crate::model::Unavailable::Superseded));
         }
-        tracing::info!(target: "oink_file_diagnostics",
-            file_stage = 5_u8, file_request = self.id, file_index = self.index,
-            "cloud file selecting and opening source stream");
-        let (current, mut reader) = self
-            .trace()
-            .io(60, self.delivery.contents().open_placeholder_selected(self.index))?;
-        let (metadata, version) = current.unwrap_or((selected.0, selected.1.unwrap_or(0)));
-        tracing::info!(target: "oink_file_diagnostics", file_stage = 6_u8,
-            file_request = self.id, file_index = self.index, size = metadata.size,
-            "cloud file source metadata selected");
-        if metadata.size > i64::MAX as u64 {
-            return Err(crate::content::unavailable(crate::model::Unavailable::InvalidData));
-        }
-        if self.request.cancelled.load(Ordering::Acquire) {
-            return Err(unavailable());
-        }
+        let contents = self.delivery.contents();
         // Publishing size/timestamps does not select a source version. Binding
         // the first version with unchanged metadata must serve the pending IO,
         // rather than invalidate it with RESTART_HYDRATION. A known version,
-        // including zero for flat providers, still detects later replacements.
-        let changed = selected.0 != metadata || selected.1.is_some_and(|old| old != version);
-        if changed {
-            // No atomic metadata restart protects a concurrent local edit.
-            // Reject this stale source version before opening/mutating the
-            // native file. RESTART_HYDRATION can discard edited ranges, while
-            // CfUpdate alone does not complete a read waiting on the old EOF.
-            drop(reader);
-            return Err(crate::content::unavailable(crate::model::Unavailable::Superseded));
-        }
+        // including zero for flat providers, still detects later replacements
+        // before opening any source body stream.
+        let (metadata, version, mut reader) = if selected.1.is_none() && contents.namespace().is_some() {
+            tracing::info!(target: "oink_file_diagnostics",
+                file_stage = 5_u8, file_request = self.id, file_index = self.index,
+                "cloud file selecting and opening source stream");
+            let (current, reader) = self
+                .trace()
+                .io(60, contents.open_placeholder_selected(self.index))?;
+            let (metadata, version) = current.unwrap_or((selected.0, selected.1.unwrap_or(0)));
+            tracing::info!(target: "oink_file_diagnostics", file_stage = 6_u8,
+                file_request = self.id, file_index = self.index, size = metadata.size,
+                "cloud file source metadata selected");
+            if metadata.size > i64::MAX as u64 {
+                drop(reader);
+                return Err(crate::content::unavailable(crate::model::Unavailable::InvalidData));
+            }
+            if self.request.cancelled.load(Ordering::Acquire) {
+                drop(reader);
+                return Err(unavailable());
+            }
+            if selected.0 != metadata {
+                drop(reader);
+                return Err(crate::content::unavailable(crate::model::Unavailable::Superseded));
+            }
+            (metadata, version, reader)
+        } else {
+            tracing::info!(target: "oink_file_diagnostics",
+                file_stage = 5_u8, file_request = self.id, file_index = self.index,
+                "cloud file selecting source metadata");
+            let current = self
+                .trace()
+                .io(60, contents.placeholder_metadata(self.index))?;
+            let (metadata, version) = current.unwrap_or((selected.0, selected.1.unwrap_or(0)));
+            tracing::info!(target: "oink_file_diagnostics", file_stage = 6_u8,
+                file_request = self.id, file_index = self.index, size = metadata.size,
+                "cloud file source metadata selected");
+            if metadata.size > i64::MAX as u64 {
+                return Err(crate::content::unavailable(crate::model::Unavailable::InvalidData));
+            }
+            if self.request.cancelled.load(Ordering::Acquire) {
+                return Err(unavailable());
+            }
+            let changed = selected.0 != metadata || selected.1.is_some_and(|old| old != version);
+            if changed {
+                return Err(crate::content::unavailable(crate::model::Unavailable::Superseded));
+            }
+            let reader = self
+                .trace()
+                .io(61, contents.open_placeholder(self.index, version))?;
+            (metadata, version, reader)
+        };
         // Even an explicit fetch of an empty stream must pass exact-version
         // EOF before completing the native item. An EOF version error must not
         // expose an empty file as successful hydration.
@@ -1468,13 +1495,11 @@ impl Work {
                     file_request = self.id, file_index = self.index, bytes = count,
                     "cloud file first source bytes verified");
             }
-            if offset == 0 || is_final {
-                self.check_hydration_target()?;
-                if offset == 0 {
-                    tracing::info!(target: "oink_file_diagnostics", file_stage = 11_u8,
-                        file_request = self.id, file_index = self.index,
-                        "cloud file hydration target validated");
-                }
+            self.check_hydration_target()?;
+            if offset == 0 {
+                tracing::info!(target: "oink_file_diagnostics", file_stage = 11_u8,
+                    file_request = self.id, file_index = self.index,
+                    "cloud file hydration target validated");
             }
             self.trace().io(
                 69,
