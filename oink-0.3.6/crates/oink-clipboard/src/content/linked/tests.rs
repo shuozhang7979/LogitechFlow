@@ -1339,10 +1339,29 @@ async fn open_selected_merges_select_and_read_on_one_stream_and_tracks_bidirecti
         fn supports_cloud_links(&self) -> bool {
             true
         }
-        fn open(&self, peer: DeviceId) -> BoxFuture<'_, io::Result<Box<dyn BulkChannel>>> {
-            let inner = RegistryLink(self.0.clone());
+        fn open(&self, _: DeviceId) -> BoxFuture<'_, io::Result<Box<dyn BulkChannel>>> {
             self.1.fetch_add(1, Ordering::SeqCst);
-            Box::pin(async move { Arc::new(inner).open(peer).await })
+            let registry = self.0.clone();
+            let peer = self.2;
+            Box::pin(async move {
+                let (a, ar) = tokio::sync::mpsc::channel(1);
+                let (b, br) = tokio::sync::mpsc::channel(1);
+                let mut server = Pipe {
+                    send: Some(a),
+                    receive: br,
+                };
+                tokio::spawn(async move {
+                    if let Ok(Some(request)) = server.recv().await {
+                        let _ = registry.serve(peer, request, &mut server).await;
+                        server.finish();
+                        let _ = server.recv().await;
+                    }
+                });
+                Ok(Box::new(Pipe {
+                    send: Some(b),
+                    receive: ar,
+                }) as Box<dyn BulkChannel>)
+            })
         }
     }
 
