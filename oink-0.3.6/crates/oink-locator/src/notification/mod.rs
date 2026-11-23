@@ -1056,6 +1056,7 @@ mod surface_tests {
         Toast {
             title: "Test".into(),
             description: String::new(),
+            progress: None,
             undo: None,
             persistent: true,
             display: DisplayInfo {
@@ -1178,6 +1179,7 @@ mod surface_tests {
         let id = overlay.push(Toast {
             title: "Test".into(),
             description: String::new(),
+            progress: None,
             undo: Some("Undo".into()),
             persistent: true,
             display: d,
@@ -1218,6 +1220,7 @@ mod geometry_tests {
             Toast {
                 title: "Test".into(),
                 description: String::new(),
+                progress: None,
                 undo: None,
                 persistent: true,
                 display: d.clone(),
