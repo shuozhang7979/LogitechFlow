@@ -1,0 +1,474 @@
+//! No hooks, input injection, windows or desktops are created by these tests.
+//! The real hook entrance runs with a recording handler and a fake next hook.
+use super::*;
+use std::sync::{Arc, Mutex, MutexGuard, atomic::AtomicBool};
+use windows::Win32::UI::WindowsAndMessaging::{
+    KBDLLHOOKSTRUCT_FLAGS, LLKHF_LOWER_IL_INJECTED, LLMHF_LOWER_IL_INJECTED, WM_KEYUP, WM_SYSKEYUP, WM_XBUTTONDOWN,
+    WM_XBUTTONUP,
+};
+
+struct Owner(Arc<AtomicBool>);
+impl crate::capture_loop::CaptureLoop for Owner {
+    fn set_wake(&mut self, _: crate::capture_loop::Wake) {}
+    fn event(&mut self, _: &CapturedEvent) -> Disposition {
+        panic!("recording handler owns these events")
+    }
+    fn poll(&mut self, _: Instant) -> Option<Instant> {
+        None
+    }
+    fn stopped(&self) -> bool {
+        false
+    }
+    fn forward_injected_input(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
+    }
+}
+
+struct Fixture {
+    forward: Arc<AtomicBool>,
+    events: Arc<Mutex<Vec<CapturedEvent>>>,
+    _cursor: tests::TestCursor,
+    _physical_snapshot: MutexGuard<'static, ()>,
+}
+static PHYSICAL_SNAPSHOT: Mutex<()> = Mutex::new(());
+
+// These tests drive the real LL callback and source router together; no native
+// hook is installed and no SendInput, desktop switch or real lock is performed.
+mod key_tail_tests;
+mod quicker_tests;
+impl Fixture {
+    fn new() -> Self {
+        let physical_snapshot = PHYSICAL_SNAPSHOT.lock().unwrap();
+        external::gap();
+        key_releases::clear();
+        crate::quicker_compat::MOUSE.clear();
+        let cursor = tests::TestCursor::at(POINT { x: 1920, y: 1080 });
+        let events = Arc::new(Mutex::new(Vec::<CapturedEvent>::new()));
+        let output = events.clone();
+        let mut state = tests::remote_state();
+        state.handler = Arc::new(move |event| {
+            output.lock().unwrap().push(event.clone());
+            Disposition::Swallow
+        });
+        STATE.with(|slot| {
+            assert!(slot.borrow_mut().replace(state).is_none());
+        });
+        let forward = Arc::new(AtomicBool::new(false));
+        crate::capture_loop::install(Box::new(Owner(forward.clone())), Arc::new(|| {}));
+        Self {
+            forward,
+            events,
+            _cursor: cursor,
+            _physical_snapshot: physical_snapshot,
+        }
+    }
+    fn mouse(&self, msg: u32, flags: u32) -> isize {
+        let info = MSLLHOOKSTRUCT {
+            pt: POINT { x: 1920, y: 1080 },
+            flags,
+            mouseData: 120 << 16,
+            ..Default::default()
+        };
+        mouse_proc_with_next(
+            0,
+            WPARAM(msg as usize),
+            LPARAM((&info as *const MSLLHOOKSTRUCT) as isize),
+            || LRESULT(0),
+        )
+        .0
+    }
+    fn key(&self, msg: u32, flags: u32) -> isize {
+        let info = KBDLLHOOKSTRUCT {
+            vkCode: 0x41,
+            scanCode: 0x1e,
+            flags: KBDLLHOOKSTRUCT_FLAGS(flags),
+            ..Default::default()
+        };
+        keyboard_proc_with_next(
+            0,
+            WPARAM(msg as usize),
+            LPARAM((&info as *const KBDLLHOOKSTRUCT) as isize),
+            || LRESULT(0),
+        )
+        .0
+    }
+
+    fn xbutton(&self, msg: u32, xbutton: u16, flags: u32) -> isize {
+        let info = MSLLHOOKSTRUCT {
+            pt: POINT { x: 1920, y: 1080 },
+            flags,
+            mouseData: u32::from(xbutton) << 16,
+            ..Default::default()
+        };
+        mouse_proc_with_next(
+            0,
+            WPARAM(msg as usize),
+            LPARAM((&info as *const MSLLHOOKSTRUCT) as isize),
+            || LRESULT(0),
+        )
+        .0
+    }
+}
+
+#[test]
+fn held_snapshot_excludes_external_and_own_keys_and_gap_cannot_rebuild_them() {
+    let f = Fixture::new();
+    assert_eq!(f.key(WM_KEYDOWN, LLKHF_INJECTED.0), 0);
+    assert!(physical_keys().is_empty());
+    assert_eq!(f.key(WM_KEYDOWN, 0), 1);
+    assert_eq!(physical_keys(), vec![KeyCode::new(0x07, 0x04)]);
+    assert_eq!(f.key(WM_KEYUP, LLKHF_INJECTED.0), 0);
+    assert_eq!(physical_keys(), vec![KeyCode::new(0x07, 0x04)]);
+    external::gap();
+    assert!(physical_keys().is_empty());
+    assert_eq!(f.key(WM_KEYDOWN, LLKHF_INJECTED.0), 0);
+    assert!(physical_keys().is_empty());
+    let info = KBDLLHOOKSTRUCT {
+        vkCode: 0x41,
+        scanCode: 0x1e,
+        dwExtraInfo: INJECT_TAG,
+        ..Default::default()
+    };
+    assert_eq!(
+        keyboard_proc_with_next(
+            0,
+            WPARAM(WM_KEYDOWN as usize),
+            LPARAM((&info as *const KBDLLHOOKSTRUCT) as isize),
+            || LRESULT(0)
+        )
+        .0,
+        0
+    );
+    assert!(physical_keys().is_empty());
+}
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        key_releases::clear();
+        STATE.with(|slot| slot.borrow_mut().take());
+        crate::capture_loop::clear();
+        external::gap();
+    }
+}
+
+#[test]
+fn right_shift_snapshot_and_routing_ignore_fake_shift_edges() {
+    let f = Fixture::new();
+    let mut info = KBDLLHOOKSTRUCT {
+        vkCode: 0xa1,
+        scanCode: 0x36,
+        flags: LLKHF_EXTENDED,
+        ..Default::default()
+    };
+    let deliver = |msg, info: &KBDLLHOOKSTRUCT| {
+        keyboard_proc_with_next(
+            0,
+            WPARAM(msg as usize),
+            LPARAM((info as *const KBDLLHOOKSTRUCT) as isize),
+            || LRESULT(0),
+        )
+    };
+    assert_eq!(deliver(WM_KEYDOWN, &info), LRESULT(1));
+    assert_eq!(physical_keys(), [KeyCode::RIGHT_SHIFT]);
+    assert_eq!(f.events.lock().unwrap().len(), 1);
+    for (vk, scan) in [(0xa0, 0x22a), (0xa1, 0x236), (0xff, 0x2a), (0xff, 0x36)] {
+        let fake = KBDLLHOOKSTRUCT {
+            vkCode: vk,
+            scanCode: scan,
+            ..info
+        };
+        for msg in [WM_KEYDOWN, WM_KEYUP] {
+            assert_eq!(deliver(msg, &fake), LRESULT(1));
+            assert_eq!(physical_keys(), [KeyCode::RIGHT_SHIFT]);
+            assert_eq!(f.events.lock().unwrap().len(), 1);
+        }
+    }
+    // An unmarked restoration DOWN is a repeat of the still-held real Shift.
+    deliver(WM_KEYDOWN, &info);
+    info.flags.0 |= 0x80;
+    deliver(WM_KEYUP, &info);
+    assert!(physical_keys().is_empty());
+    assert_eq!(f.events.lock().unwrap().len(), 3);
+    assert_eq!(
+        f.events.lock().unwrap().last().unwrap().event,
+        InputEvent::Key {
+            code: KeyCode::RIGHT_SHIFT,
+            pressed: false
+        }
+    );
+}
+
+#[test]
+fn external_buttons_and_keys_do_not_release_physical_remote_holds_in_either_order() {
+    for external_first in [false, true] {
+        let f = Fixture::new();
+        if external_first {
+            assert_eq!(f.mouse(WM_LBUTTONDOWN, LLMHF_INJECTED), 0);
+            assert_eq!(f.key(WM_KEYDOWN, LLKHF_INJECTED.0), 0);
+        }
+        assert_eq!(f.mouse(WM_LBUTTONDOWN, 0), 1);
+        assert_eq!(f.key(WM_KEYDOWN, 0), 1);
+        if !external_first {
+            assert_eq!(f.mouse(WM_LBUTTONDOWN, LLMHF_INJECTED), 0);
+            assert_eq!(f.key(WM_KEYDOWN, LLKHF_INJECTED.0), 0);
+        }
+        assert_eq!(f.mouse(WM_LBUTTONUP, LLMHF_INJECTED), 0);
+        assert_eq!(f.key(WM_KEYUP, LLKHF_INJECTED.0), 0);
+        assert_eq!(with_state(|s| s.keys.len()), Some(1));
+        assert_eq!(f.events.lock().unwrap().len(), 2);
+        assert_eq!(f.mouse(WM_LBUTTONUP, 0), 1);
+        assert_eq!(f.key(WM_KEYUP, 0), 1);
+        let events = f.events.lock().unwrap();
+        assert_eq!(events.len(), 4);
+        assert!(events.iter().all(|event| event.physical));
+        assert_eq!(with_state(|s| s.keys.len()), Some(0));
+        assert!(
+            with_state(|s| s.continuity.transition(false, |_| false, 0))
+                .unwrap()
+                .is_empty()
+        );
+    }
+}
+
+#[test]
+fn physical_xbuttons_preserve_down_up_pair_and_button_identity() {
+    for (xbutton, expected) in [(1, MouseButton::Back), (2, MouseButton::Forward)] {
+        let f = Fixture::new();
+        assert_eq!(f.xbutton(WM_XBUTTONDOWN, xbutton, 0), 1);
+        assert_eq!(f.xbutton(WM_XBUTTONUP, xbutton, 0), 1);
+        let events = f.events.lock().unwrap();
+        assert_eq!(
+            events.iter().map(|event| event.event.clone()).collect::<Vec<_>>(),
+            [
+                InputEvent::Button {
+                    button: expected,
+                    pressed: true,
+                },
+                InputEvent::Button {
+                    button: expected,
+                    pressed: false,
+                },
+            ]
+        );
+    }
+}
+
+#[test]
+fn native_entrance_applies_live_toggle_only_after_external_chord_and_drag_end() {
+    for before in [false, true] {
+        let f = Fixture::new();
+        f.forward.store(before, Ordering::Relaxed);
+        assert_eq!(f.mouse(WM_LBUTTONDOWN, LLMHF_INJECTED), isize::from(before));
+        f.forward.store(!before, Ordering::Relaxed);
+        assert_eq!(f.key(WM_KEYDOWN, LLKHF_INJECTED.0), isize::from(before));
+        assert_eq!(f.mouse(WM_LBUTTONUP, LLMHF_INJECTED), isize::from(before));
+        assert_eq!(f.key(WM_KEYUP, LLKHF_INJECTED.0), isize::from(before));
+        assert_eq!(f.events.lock().unwrap().len(), if before { 4 } else { 0 });
+        assert_eq!(f.mouse(WM_MOUSEWHEEL, LLMHF_INJECTED), isize::from(!before));
+        assert_eq!(f.events.lock().unwrap().len(), if before { 4 } else { 1 });
+    }
+}
+
+#[test]
+fn external_move_realigns_the_next_physical_step_without_changing_mode_or_restore_target() {
+    let f = Fixture::new();
+    let park = POINT { x: 1920, y: 1080 };
+    let external = POINT { x: 0, y: 100 }; // A screen edge must not enter routing.
+    let mut info = MSLLHOOKSTRUCT {
+        pt: external,
+        flags: LLMHF_INJECTED,
+        ..Default::default()
+    };
+    let result = mouse_proc_with_next(
+        0,
+        WPARAM(WM_MOUSEMOVE as usize),
+        LPARAM((&info as *const MSLLHOOKSTRUCT) as isize),
+        || {
+            assert_eq!(
+                super::super::warp::sample(park),
+                external,
+                "register before downstream reentry"
+            );
+            LRESULT(0)
+        },
+    );
+    assert_eq!(result.0, 0);
+    assert!(f.events.lock().unwrap().is_empty());
+    assert_eq!(with_state(|s| s.park), Some(park));
+    assert!(with_state(|s| matches!(s.mode, CaptureMode::Remote { .. })).unwrap());
+    info.pt = POINT { x: 3, y: 98 };
+    info.flags = 0;
+    assert_eq!(
+        mouse_proc_with_next(
+            0,
+            WPARAM(WM_MOUSEMOVE as usize),
+            LPARAM((&info as *const MSLLHOOKSTRUCT) as isize),
+            || panic!("physical move stays swallowed")
+        )
+        .0,
+        1
+    );
+    let events = f.events.lock().unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].event, InputEvent::PointerDelta { dx: 3., dy: -2. });
+    assert_eq!(events[0].cursor, None);
+}
+
+#[test]
+fn external_move_reentry_is_accounted_and_downstream_rejection_preserves_newer_commits() {
+    let _f = Fixture::new();
+    let park = POINT { x: 1920, y: 1080 };
+    let newer = POINT { x: 400, y: 300 };
+    let info = MSLLHOOKSTRUCT {
+        pt: POINT { x: 50, y: 60 },
+        flags: LLMHF_INJECTED,
+        ..Default::default()
+    };
+    STATE.with(|slot| {
+        let _borrow = slot.borrow_mut();
+        let result = mouse_proc_with_next(
+            0,
+            WPARAM(WM_MOUSEMOVE as usize),
+            LPARAM((&info as *const MSLLHOOKSTRUCT) as isize),
+            || {
+                super::super::warp::accepted(park, newer);
+                LRESULT(17)
+            },
+        );
+        assert_eq!(result.0, 17);
+        assert_eq!(super::super::warp::sample(park), newer);
+    });
+}
+
+#[test]
+fn default_local_path_covers_lower_il_unknown_keys_all_buttons_and_both_wheels() {
+    let f = Fixture::new();
+    for flags in [
+        LLMHF_INJECTED,
+        LLMHF_LOWER_IL_INJECTED,
+        LLMHF_INJECTED | LLMHF_LOWER_IL_INJECTED,
+    ] {
+        for msg in [
+            WM_MOUSEMOVE,
+            WM_LBUTTONDOWN,
+            WM_LBUTTONUP,
+            WM_RBUTTONDOWN,
+            WM_RBUTTONUP,
+            WM_MBUTTONDOWN,
+            WM_MBUTTONUP,
+            WM_XBUTTONDOWN,
+            WM_XBUTTONUP,
+            WM_MOUSEWHEEL,
+            WM_MOUSEHWHEEL,
+        ] {
+            assert_eq!(f.mouse(msg, flags), 0);
+        }
+    }
+    for flags in [LLKHF_INJECTED.0, LLKHF_LOWER_IL_INJECTED.0] {
+        for msg in [WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP] {
+            let info = KBDLLHOOKSTRUCT {
+                vkCode: 0xe7,
+                flags: KBDLLHOOKSTRUCT_FLAGS(flags),
+                ..Default::default()
+            };
+            assert_eq!(
+                keyboard_proc_with_next(
+                    0,
+                    WPARAM(msg as usize),
+                    LPARAM((&info as *const KBDLLHOOKSTRUCT) as isize),
+                    || LRESULT(23)
+                )
+                .0,
+                23
+            );
+        }
+    }
+    assert!(f.events.lock().unwrap().is_empty());
+    assert_eq!(with_state(|s| s.keys.len()), Some(0));
+}
+
+/// RUST-6 (0.3.3 build 100, Windows 11): the router, inside the capture owner,
+/// placed the cursor with SendInput from this hook thread. Windows delivered a
+/// physical mouse callback synchronously into the hook while the owner was
+/// still borrowed, and its mouse guard read panicked in a nounwind callback.
+/// The nested callback here runs at the same point: inside the owner's poll,
+/// with and without the hook State also in use (RUST-6 had both busy).
+#[test]
+fn physical_mouse_nested_in_the_busy_owner_keeps_the_guard_without_borrowing_it() {
+    struct Nesting {
+        disabled: bool,
+        state_busy: bool,
+        routed: Arc<AtomicUsize>,
+        nested: Arc<Mutex<Option<isize>>>,
+    }
+    impl crate::capture_loop::CaptureLoop for Nesting {
+        fn set_wake(&mut self, _: crate::capture_loop::Wake) {}
+        fn event(&mut self, _: &CapturedEvent) -> Disposition {
+            self.routed.fetch_add(1, Ordering::Relaxed);
+            Disposition::Pass
+        }
+        fn poll(&mut self, _: Instant) -> Option<Instant> {
+            let info = MSLLHOOKSTRUCT {
+                pt: POINT { x: 1921, y: 1080 },
+                ..Default::default()
+            };
+            let deliver = || {
+                mouse_proc_with_next(
+                    0,
+                    WPARAM(WM_MOUSEMOVE as usize),
+                    LPARAM((&info as *const MSLLHOOKSTRUCT) as isize),
+                    || LRESULT(0),
+                )
+                .0
+            };
+            let result = if self.state_busy {
+                STATE.with(|slot| {
+                    let _borrow = slot.borrow_mut();
+                    deliver()
+                })
+            } else {
+                deliver()
+            };
+            *self.nested.lock().unwrap() = Some(result);
+            None
+        }
+        fn stopped(&self) -> bool {
+            false
+        }
+        fn mouse_disabled(&self) -> bool {
+            self.disabled
+        }
+    }
+    for disabled in [false, true] {
+        for state_busy in [false, true] {
+            let f = Fixture::new();
+            // Production routes hook events through the capture owner.
+            with_state(|s| {
+                s.handler = Arc::new(crate::capture_loop::event);
+                s.mode = CaptureMode::Local;
+            });
+            let routed = Arc::new(AtomicUsize::new(0));
+            let nested = Arc::new(Mutex::new(None));
+            crate::capture_loop::install(
+                Box::new(Nesting {
+                    disabled,
+                    state_busy,
+                    routed: routed.clone(),
+                    nested: nested.clone(),
+                }),
+                Arc::new(|| {}),
+            );
+            // An ordinary physical move consults the owner's guard first.
+            let top = f.mouse(WM_MOUSEMOVE, 0);
+            if disabled {
+                assert_eq!(top, 1);
+            }
+            let before = routed.load(Ordering::Relaxed);
+            crate::capture_loop::poll(Instant::now());
+            let label = format!("disabled={disabled} state_busy={state_busy}");
+            // The guard keeps the owner's last answer; an enabled mouse passes
+            // the nested move unrouted, as every reentrant hook callback does.
+            assert_eq!(*nested.lock().unwrap(), Some(isize::from(disabled)), "{label}");
+            assert_eq!(routed.load(Ordering::Relaxed), before, "{label}");
+        }
+    }
+}

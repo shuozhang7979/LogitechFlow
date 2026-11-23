@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__/
+*.pyc
+/dist/
+/oink-v*.zip
+**/target/
+**/node_modules/
+oink-0.3.6/apps/oink/dist/
+oink-0.3.6/apps/oink/src-tauri/gen/

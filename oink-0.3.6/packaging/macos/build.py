@@ -1,0 +1,366 @@
+#!/usr/bin/env python3
+"""Assemble, sign and optionally notarize a release without installing it."""
+import argparse
+import base64
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+import plistlib
+import re
+import shutil
+import subprocess
+import tempfile
+import uuid
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'build-support'))
+from provenance import verify, digest
+from identity import artifact_stem
+import package_notes
+from payload import copy_notices
+from report_manifest import write_manifest, image_identity
+from signing import private_run, select_identity, notarize, staple_and_validate, awake_for_signing
+from localizations import DECLARATIONS, STRINGS, write_localizations
+from macos_imports import verify_imports
+from macos_launch_smoke import launch_smoke
+from macos_registration import temporary_registrations
+
+from versioning import release_version, macos_version_fields
+
+ROOT = Path(__file__).resolve().parents[2]
+I = json.loads((ROOT / 'packaging/identity.json').read_text())
+PROVIDER_EXTENSION_FLAGS = ['-application-extension', '-Xlinker', '-e', '-Xlinker', '_OinkFileProviderMain',
+                            '-l', 'extension']
+
+
+def run(*args, **kwargs):
+    return subprocess.run([str(a) for a in args], check=True, **kwargs)
+
+
+def plist(path, value):
+    path.write_bytes(plistlib.dumps(value))
+
+
+def write_swift_identity(path, team=None, adhoc=False):
+    resolved_team = team or os.environ.get('OINK_MACOS_TEAM_ID') or I['macos']['team_id']
+    approved_group = ('group.' if adhoc else resolved_team + '.') + I['macos']['app_group_suffix']
+    path.write_text('enum ReleaseIdentity {\n' + '\n'.join(
+        f'    static let {key} = {json.dumps(value)}' for key, value in {
+            'appGroupKey': I['macos']['app_group_key'], 'approvedAppGroup': approved_group,
+            'domain': I['macos']['file_provider_domain'],
+            'displayName': I['name'], 'subsystem': I['macos']['file_provider_id']}.items()) + '\n}\n')
+
+
+def compile_provider_extension(common, generated, crash_object, output):
+    run(*common, '-module-name', I['binaries']['file_provider_extension'], *PROVIDER_EXTENSION_FLAGS,
+        ROOT / 'apps/file-provider/ExtensionMain.swift',
+        ROOT / 'apps/file-provider/Upgrade.swift', ROOT / 'apps/file-provider/ContainerCleanup.swift',
+        generated, ROOT / 'apps/file-provider/Shared.swift', ROOT / 'apps/file-provider/ReportCapture.swift',
+        ROOT / 'apps/file-provider/Extension.swift', crash_object, '-o', output)
+
+
+def compile_finder_extension(common, output):
+    run(*common, '-module-name', 'OinkFinderSync', '-application-extension',
+        '-Xlinker', '-e', '-Xlinker', '_OinkFinderSyncMain', '-l', 'extension',
+        ROOT / 'apps/finder-sync/Request.swift', ROOT / 'apps/finder-sync/ExtensionMain.swift',
+        ROOT / 'apps/finder-sync/Extension.swift', '-o', output)
+
+
+def compile_paste_helper(common, output):
+    run(*common, ROOT / 'apps/finder-sync/Request.swift', ROOT / 'apps/finder-sync/Helper.swift', '-o', output)
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--binaries', type=Path, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--arch', choices=['arm64', 'x64'], default='arm64')
+    p.add_argument('--version', default=I['version'])
+    p.add_argument('--update-notes-file', type=Path, help='Prepared embedded package notes')
+    p.add_argument('--source-commit', help='Full source commit for a in-house build-labelled version')
+    p.add_argument('--build', type=int, required=True)
+    p.add_argument('--source-tree-sha256', required=True)
+    p.add_argument('--signing-fingerprint', default=os.environ.get('MACOS_SIGNING_FINGERPRINT'))
+    p.add_argument('--adhoc', action='store_true', help='Sign ad-hoc (-) without a Developer ID certificate')
+    p.add_argument('--team', default=os.environ.get('OINK_MACOS_TEAM_ID') or I['macos']['team_id'])
+    p.add_argument('--notary-profile', default=os.environ.get('NOTARY_PROFILE'))
+    p.add_argument('--notary-timeout', type=int, default=300)
+    p.add_argument('--notary-keychain', type=Path, help='Optional non-default keychain containing the notary profile')
+    p.add_argument('--tool-cache', type=Path, required=True, help='Pinned packaging tools (dmgbuild)')
+    a = p.parse_args()
+    if not a.adhoc and not re.fullmatch(r'[A-Z0-9]{10}', a.team):
+        p.error('team must be a 10-character Apple Developer Team ID')
+    native_arch = 'x86_64' if a.arch == 'x64' else 'arm64'
+    if not re.fullmatch(r'[0-9a-f]{64}', a.source_tree_sha256) or not 1 <= a.build < 2**31:
+        p.error('source tree SHA256 and positive build required')
+    if a.version != I['version']:
+        p.error('version must match packaging/identity.json')
+    try:
+        a.version = release_version(a.version, a.source_commit, a.build)
+    except ValueError as error:
+        p.error(str(error))
+    trust = json.loads((ROOT / 'packaging/update-trust.json').read_text())
+    if trust['mac']['enabled'] and not trust['mac']['public_key']:
+        p.error('enabled Mac updates require the compiled Mac update public key')
+    a.update_public_key = trust['mac']['public_key']
+    a.identity = '-' if a.adhoc else select_identity(a.team, a.signing_fingerprint)
+    provenance = verify(a.binaries, a.source_tree_sha256, a.version, ('aarch64-apple-darwin' if a.arch == 'arm64' else 'x86_64-apple-darwin'), a.build, a.source_commit)
+    if a.update_public_key:
+        try:
+            if len(base64.b64decode(a.update_public_key, validate=True)) != 32:
+                raise ValueError('wrong length')
+        except ValueError:
+            p.error('Mac update Ed25519 public key must be base64 for exactly 32 bytes')
+    a.output = a.output.resolve()
+    a.output.mkdir(parents=True, exist_ok=True)
+    app = a.output / 'staging.noindex' / I['macos']['app']
+    if app.exists():
+        p.error('output app already exists; choose a fresh output directory')
+    mac = app / 'Contents/MacOS'
+    resources = app / 'Contents/Resources'
+    mac.mkdir(parents=True)
+    resources.mkdir()
+    b = I['binaries']
+    for role in ['backend', 'agent', 'crash_collector']:
+        shutil.copy2(a.binaries / b[role], mac / b[role])
+    shutil.copy2(ROOT / 'apps/oink/src-tauri/icons/icon.icns', resources / 'icon.icns')
+    # macOS treats a basename/display-name mismatch as a user rename and
+    # shows the basename in Dock/Finder (verified on macOS 26). Keep both Oink;
+    # the helper's bundle identifier remains its distinct LaunchServices identity.
+    helper = app / 'Contents/Helpers/Oink.app'
+    (helper / 'Contents/MacOS').mkdir(parents=True)
+    shutil.copy2(a.binaries / b['ui'], helper / 'Contents/MacOS' / b['ui'])
+    (helper / 'Contents/Resources').mkdir()
+    shutil.copy2(resources / 'icon.icns', helper / 'Contents/Resources/icon.icns')
+    plist(helper / 'Contents/Info.plist', dict(
+        CFBundleExecutable=b['ui'], CFBundleIdentifier=I['macos']['ui_id'],
+        CFBundleName=I['name'], CFBundleDisplayName=I['name'], CFBundlePackageType='APPL',
+        **macos_version_fields(a.version, a.build),
+        CFBundleIconFile='icon.icns', LSMinimumSystemVersion=I['macos_minimum'], LSUIElement=True,
+        NSHighResolutionCapable=True, **DECLARATIONS))
+    write_localizations(helper)
+    group = ('group.' if a.adhoc else a.team + '.') + I['macos']['app_group_suffix']
+    info = dict(CFBundleExecutable=b['backend'], CFBundleIdentifier=I['bundle_id'],
+                CFBundleName=I['name'], CFBundleDisplayName=I['name'], CFBundlePackageType='APPL',
+                **macos_version_fields(a.version, a.build), CFBundleIconFile='icon.icns',
+                LSMinimumSystemVersion=I['macos_minimum'], LSUIElement=True, NSHighResolutionCapable=True,
+                NSBonjourServices=[I['bonjour_service']], **DECLARATIONS)
+    info.update(STRINGS['en'])
+    write_localizations(app, permissions=True)
+    info[I['macos']['app_group_key']] = group
+    # The app has no Sparkle; it downloads signed DMGs itself (v2 catalogs).
+    # Clients up to 0.3.5 still install this bundle with their own Sparkle from
+    # the v1 appcast ZIP. Keeping the unchanged Mac update key here makes that a
+    # same-key update for them, and the v1 publisher checks it.
+    if a.update_public_key:
+        info['SUPublicEDKey'] = a.update_public_key
+    else:
+        print('Automatic updates are disabled; no Mac update public key is configured.')
+    notes_file = a.update_notes_file or a.output / 'embedded-update-notes.json'
+    if a.update_notes_file:
+        package_notes.read(notes_file, a.build, a.source_commit, ROOT)
+    else:
+        package_notes.write(notes_file, package_notes.generate(ROOT, a.build, a.source_commit, a.output.parent.parent))
+    package_notes.embed_macos(notes_file, app / 'Contents/Resources')
+    plist(app / 'Contents/Info.plist', info)
+    ext = app / 'Contents/PlugIns' / I['macos']['file_provider_bundle']
+    (ext / 'Contents/MacOS').mkdir(parents=True)
+    ext_info = dict(CFBundleIdentifier=I['macos']['file_provider_id'], CFBundleName=I['macos']['file_provider_name'],
+                    CFBundleExecutable=b['file_provider_extension'], CFBundlePackageType='XPC!',
+                    **macos_version_fields(a.version, a.build), LSMinimumSystemVersion=I['macos_minimum'],
+                    **DECLARATIONS)
+    write_localizations(ext)
+    ext_info[I['macos']['app_group_key']] = group
+    ext_info['NSExtension'] = dict(NSExtensionPointIdentifier='com.apple.fileprovider-nonui',
+        NSExtensionPrincipalClass=b['file_provider_class'], NSExtensionFileProviderDocumentGroup=group,
+        NSExtensionFileProviderSupportsEnumeration=True, NSFileProviderUserInteractions=[])
+    plist(ext / 'Contents/Info.plist', ext_info)
+    finder = app / 'Contents/PlugIns/OinkFinderSync.appex'
+    (finder / 'Contents/MacOS').mkdir(parents=True)
+    finder_resources = finder / 'Contents/Resources'
+    finder_resources.mkdir()
+    for name in ('OinkPasteMenu.png', 'OinkPasteMenu@2x.png',
+                 'OinkPasteMenuDark.png', 'OinkPasteMenuDark@2x.png'):
+        shutil.copy2(ROOT / 'apps/finder-sync/Resources' / name, finder_resources / name)
+    plist(finder / 'Contents/Info.plist', dict(CFBundleIdentifier=I['bundle_id'] + '.findersync',
+        CFBundleName='Oink Finder', CFBundleExecutable='OinkFinderSync', CFBundlePackageType='XPC!',
+        **macos_version_fields(a.version, a.build), LSMinimumSystemVersion=I['macos_minimum'],
+        **DECLARATIONS, OinkAppGroup=group, NSExtension=dict(NSExtensionPointIdentifier='com.apple.FinderSync',
+        NSExtensionPrincipalClass='OinkFinderSync')))
+    paste_helper = app / 'Contents/Helpers/OinkPaste.app'
+    (paste_helper / 'Contents/MacOS').mkdir(parents=True)
+    plist(paste_helper / 'Contents/Info.plist', dict(CFBundleIdentifier=I['bundle_id'] + '.paste',
+        CFBundleName='Oink Paste', CFBundleExecutable='OinkPaste', CFBundlePackageType='APPL',
+        **macos_version_fields(a.version, a.build), LSMinimumSystemVersion=I['macos_minimum'], LSUIElement=True, OinkAppGroup=group, **DECLARATIONS))
+    write_localizations(finder)
+    write_localizations(paste_helper)
+    copy_notices(resources)
+    with tempfile.TemporaryDirectory(prefix='release-package-') as tmp:
+        tmp = Path(tmp)
+        # Offline HAL tests load the bundle directly, without registering it
+        # with CoreAudio or starting I/O. Installation is a separate user action.
+        plugin_build = tmp / 'audio-plugin'
+        run('bash', ROOT / 'apps/audio-plugin/build.sh', plugin_build, a.source_tree_sha256, native_arch)
+        plugin_payload = resources / 'AudioPlugin'
+        plugin_payload.mkdir()
+        plugin = plugin_payload / 'OinkMicrophone.driver'
+        shutil.copytree(plugin_build / 'OinkMicrophone.driver', plugin)
+        shutil.copy2(ROOT / 'apps/audio-plugin/install.sh', plugin_payload / 'install.sh')
+        generated = tmp / 'ReleaseIdentity.swift'
+        write_swift_identity(generated, a.team, adhoc=a.adhoc)
+        host = {'com.apple.security.application-groups': [group], 'com.apple.security.device.audio-input': True}
+        plist(tmp / 'host.plist', host)
+        plist(tmp / 'paste-host.plist', {'com.apple.security.application-groups': [group]})
+        plist(tmp / 'finder.plist', {'com.apple.security.application-groups': [group], 'com.apple.security.app-sandbox': True})
+        plist(tmp / 'extension.plist', {'com.apple.security.application-groups': [group],
+              'com.apple.security.app-sandbox': True, 'com.apple.security.network.client': True})
+        manager = dict(CFBundleIdentifier=I['bundle_id'], CFBundleName=I['name'], **macos_version_fields(a.version, a.build))
+        manager[I['macos']['app_group_key']] = group
+        plist(tmp / 'manager.plist', manager)
+        common = ['xcrun', 'swiftc', '-swift-version', '5', '-O', '-g', '-debug-prefix-map', f'{ROOT}=oink',
+                  '-debug-prefix-map', f'{tmp}=oink/generated',
+                  '-target', f'{native_arch}-apple-macos{I["macos_minimum"]}', '-parse-as-library', '-D', 'OINK_RELEASE']
+        run('xcrun', 'clang', '-O2', '-g', f'-ffile-prefix-map={ROOT}=oink', '-std=c11', '-target', f'{native_arch}-apple-macos{I["macos_minimum"]}',
+            '-c', ROOT / 'apps/file-provider/CrashCapture.c', '-o', tmp / 'crash-capture.o')
+        compile_finder_extension(common, finder / 'Contents/MacOS/OinkFinderSync')
+        compile_paste_helper(common, paste_helper / 'Contents/MacOS/OinkPaste')
+        compile_provider_extension(common, generated, tmp / 'crash-capture.o',
+                                   ext / 'Contents/MacOS' / b['file_provider_extension'])
+        run(*common, '-Xlinker', '-sectcreate', '-Xlinker', '__TEXT', '-Xlinker', '__info_plist',
+            '-Xlinker', tmp / 'manager.plist', generated, ROOT / 'apps/file-provider/Shared.swift',
+            ROOT / 'apps/file-provider/Upgrade.swift', ROOT / 'apps/file-provider/ContainerCleanup.swift', ROOT / 'apps/file-provider/Uninstall.swift',
+            ROOT / 'apps/file-provider/NativeReceived.swift', ROOT / 'apps/file-provider/Manager.swift', '-o', mac / b['file_provider_manager'])
+        report = write_manifest(resources / 'report-manifest.json', a.source_tree_sha256, a.version, a.build,
+                                [('agent', mac / b['backend']), ('agent', mac / b['agent']),
+                                 ('ui_rust', helper / 'Contents/MacOS' / b['ui']),
+                                 ('file_provider', ext / 'Contents/MacOS' / b['file_provider_extension'])])
+        shutil.copy2(resources / 'report-manifest.json', helper / 'Contents/Resources/report-manifest.json')
+        symbols = a.output / 'symbols.noindex'
+        symbols.mkdir(exist_ok=True)
+        symbol_images = [mac / b[role] for role in ('backend', 'agent', 'crash_collector', 'file_provider_manager')]
+        plugin_image = plugin / 'Contents/MacOS/OinkMicrophone'
+        plugin_dsym = plugin_build / 'OinkMicrophone.dSYM'
+        run('xcrun', 'dsymutil', plugin_image, '-o', plugin_dsym)
+        symbol_images.append(plugin_image)
+        symbol_images.append(finder / 'Contents/MacOS/OinkFinderSync')
+        symbol_images.append(paste_helper / 'Contents/MacOS/OinkPaste')
+        symbol_images += [helper / 'Contents/MacOS' / b['ui'], ext / 'Contents/MacOS' / b['file_provider_extension']]
+        symbol_records = []
+        for image in symbol_images:
+            dsym = symbols / (image.name + '.dSYM')
+            generated = (image.parent if image.name in (b['file_provider_manager'], b['file_provider_extension'], 'OinkFinderSync', 'OinkPaste')
+                         else a.binaries) / (image.name + '.dSYM')
+            if image == plugin_image:
+                generated = plugin_dsym
+            if not generated.is_dir():
+                raise RuntimeError('Link-time dSYM missing for ' + image.name)
+            if dsym.exists():
+                shutil.rmtree(dsym)
+            if generated.is_relative_to(app):
+                shutil.move(generated, dsym)
+            else:
+                shutil.copytree(generated, dsym)
+            # Cargo's link-time dSYM keeps the hashed Rust artifact basename;
+            # Swift uses the installed executable name. Bind by UUID below.
+            dwarfs = list((dsym / 'Contents/Resources/DWARF').iterdir())
+            if len(dwarfs) != 1 or not dwarfs[0].is_file():
+                raise RuntimeError('Expected one thin DWARF image in the dSYM')
+            dwarf = dwarfs[0]
+            output = subprocess.check_output(['xcrun', 'dwarfdump', '--uuid', str(dwarf)], text=True)
+            identifier = re.search(r'UUID: ([0-9A-Fa-f-]{36})', output)
+            if not identifier or list(uuid.UUID(identifier[1]).bytes) != image_identity(image)['debug_id']:
+                raise RuntimeError('dSYM does not match the linked image')
+            statistics = json.loads(subprocess.check_output(['xcrun', 'dwarfdump', '--statistics', str(dwarf)], text=True))
+            line_bytes = statistics.get('#bytes in __debug_line', 0)
+            if not line_bytes:
+                raise RuntimeError('Private dSYM contains no source line information')
+            symbol_records.append({'image': image.name, **image_identity(image),
+                                   'dwarf_file': dwarf.relative_to(symbols).as_posix(),
+                                   'dwarf_sha256': digest(dwarf), 'line_table_bytes': line_bytes})
+            # Keep compiler object paths/debug records in the private dSYM,
+            # rather than the signed public executable.
+            linked_identity = image_identity(image)
+            run('xcrun', 'strip', '-S', image)
+            if image_identity(image) != linked_identity:
+                raise RuntimeError('Removing debug records changed the linked image identity')
+        (symbols / 'manifest.json').write_text(json.dumps({'source_tree_sha256': a.source_tree_sha256,
+                                                         'images': symbol_records}, indent=2) + '\n')
+        record = dict(schema=1, product=I['name'], version=a.version, source_commit=a.source_commit, build=a.build, provenance='source-tree', source_tree_sha256=a.source_tree_sha256,
+                      architecture=a.arch, minimum_os=I['macos_minimum'], protocol_baseline=1,
+                      signing='adhoc' if a.adhoc else 'developer-id', notarization='see detached release record',
+                      update_policy='feed-v2' if trust['mac']['enabled'] else 'manual-only')
+        # The v1 appcast ZIP below is signed with the same key for <=0.3.5 clients.
+        record['sparkle'] = dict(included=False, public_key_configured=bool(a.update_public_key))
+        (resources / I['metadata_file']).write_text(json.dumps(record, indent=2) + '\n')
+        record['report_manifest'] = report
+        # Include native Swift code and all embedded framework images. Fail
+        # before signing/notarization even when the SDK's availability is wrong.
+        verify_imports([app], I['macos_minimum'])
+
+        with awake_for_signing():
+            def sign(path, identifier, entitlements=None):
+                args = ['codesign', '--force', '--options', 'runtime', *([] if a.adhoc else ['--timestamp']), '--sign', a.identity, '--identifier', identifier]
+                if entitlements:
+                    args += ['--entitlements', str(entitlements)]
+                private_run(*args, path)
+            sign(plugin, 'com.hachiwii.oink.microphone.driver')
+            sign(finder, I['bundle_id'] + '.findersync', tmp / 'finder.plist')
+            sign(paste_helper, I['bundle_id'] + '.paste', tmp / 'paste-host.plist')
+            sign(ext, I['macos']['file_provider_id'], tmp / 'extension.plist')
+            # Classic Keychain trusted-application ACLs compare signing identity.
+            # The manager must not share the credential-owning backend's identity.
+            sign(mac / b['file_provider_manager'], I['bundle_id'] + '.file-provider-manager', tmp / 'host.plist')
+            sign(helper, I['macos']['ui_id'])
+            sign(mac / b['agent'], I['macos']['agent_id'])
+            sign(mac / b['crash_collector'], I['bundle_id'] + '.crash-collector')
+            sign(app, I['bundle_id'], tmp / 'host.plist')
+            from content import verify_app
+            effective_identity = {**I, 'macos': {**I['macos'], 'team_id': a.team}}
+            record['components'] = verify_app(app, effective_identity, native_arch, adhoc=a.adhoc)
+            run('node', ROOT / 'build-support/check-package-licenses.mjs', app, 'macos-' + a.arch, cwd=ROOT)
+            # Exercise the shipping signature, hardened runtime and embedded loader
+            # before notarization. Private smoke state never contacts the user host.
+            backend = mac / b['backend']
+            # LaunchServices discovers the nested appex when the host is launched,
+            # even though smoke disables File Provider work. Remove only this
+            # disposable bundle's registrations before another installation can
+            # choose it as its provider host; do this on smoke failures too.
+            with temporary_registrations(app, [
+                    (I['macos']['file_provider_bundle'], I['macos']['file_provider_id']),
+                    ('OinkFinderSync.appex', I['bundle_id'] + '.findersync')]):
+                launch_smoke(backend, seconds=10)
+            record['launch_smoke'] = {'status': 'passed', 'seconds': 10, 'signed': True,
+                                      'backend': backend.relative_to(app).as_posix(),
+                                      'backend_sha256': digest(backend)}
+            app_notary = {'status': 'not-submitted'}
+            if a.notary_profile and not a.adhoc:
+                submission = tmp / 'submission.zip'
+                run('ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', app, submission)
+                # A ZIP is submitted, but the returned ticket belongs to its app.
+                app_notary = notarize(submission, a.notary_profile, a.notary_keychain, a.notary_timeout)
+                if app_notary['status'] == 'Accepted':
+                    staple_and_validate(app)
+                    app_notary['stapled'] = True
+            stem = artifact_stem(a.version, 'macos', a.arch)
+            dmg = a.output / f'{stem}.dmg'
+            from dmg import create
+            create(app, dmg, a.tool_cache)
+            private_run('codesign', '--force', *([] if a.adhoc else ['--timestamp']), '--sign', a.identity, dmg)
+            private_run('codesign', '--verify', '--strict', dmg)
+            dmg_notary = {'status': 'not-submitted'} if a.adhoc else notarize(dmg, a.notary_profile, a.notary_keychain, a.notary_timeout)
+            # v1 appcast archive: the update clients up to 0.3.5 install with Sparkle.
+            archive = a.output / f'{stem}.zip'
+            run('ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', app, archive)
+            record['notarization'] = {'app': app_notary, 'dmg': dmg_notary}
+            record['notarized'] = app_notary.get('stapled', False) and dmg_notary.get('stapled', False)
+            record['team_id'] = None if a.adhoc else a.team
+            record['certificate_sha1'] = None if a.adhoc else a.identity
+            record['artifacts'] = [{'name': f.name, 'size': f.stat().st_size,
+                                    'sha256': hashlib.sha256(f.read_bytes()).hexdigest()} for f in [dmg, archive]]
+            (a.output / 'release.json').write_text(json.dumps(record, indent=2) + '\n')
+            shutil.rmtree(app)
+            (a.output / 'SHA256SUMS').write_text(''.join(f"{f['sha256']}  {f['name']}\n" for f in record['artifacts']))
+
+
+if __name__ == '__main__':
+    main()

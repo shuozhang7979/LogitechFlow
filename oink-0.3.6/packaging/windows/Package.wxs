@@ -1,0 +1,280 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="$(var.ProductName)" Manufacturer="$(var.Manufacturer)"
+           Version="$(var.ProductVersion)" ProductCode="$(var.ProductCode)"
+           UpgradeCode="$(var.UpgradeCode)" Scope="perMachine" InstallerVersion="500">
+    <Binary Id="OinkLocalUpdateNotes" SourceFile="$(var.UpdateNotesFile)" />
+    <Icon Id="OinkIcon.ico" SourceFile="$(var.AppIcon)" />
+    <!-- MSI database metadata used for read-only local-drop preflight; UAC authorizes it. -->
+    <Property Id="OINK_VERSION" Value="$(var.DisplayVersion)" />
+    <Property Id="OINK_SOURCE_TREE" Value="$(var.SourceTreeSha256)" />
+    <Property Id="OINK_MINIMUM_WINDOWS_BUILD" Value="$(var.MinimumWindowsBuild)" />
+    <Property Id="ARPPRODUCTICON" Value="OinkIcon.ico" />
+    <!-- Private UI properties never cross to the elevated execute sequence. -->
+    <Property Id="OinkLaunch" Value="1" />
+    <!-- Launch Oink is a fresh-install choice. An upgrade restores the previous
+         state instead: RelaunchUserSessions reopens Oink only where it was running. -->
+    <SetProperty Id="OinkLaunch" Action="NoUpgradeLaunch" Value="0" After="FindRelatedProducts" Sequence="ui"
+                 Condition="WIX_UPGRADE_DETECTED" />
+    <Property Id="OINK_DESKTOP_SHORTCUT" Secure="yes" />
+    <!-- Launch at login: chosen on the welcome page, before the elevated
+         transaction, because it also enables the machine-level pre-login
+         backend for this user. Fresh installs default on; an upgrade defaults
+         to the user's current Run entry. No quiet-install default. -->
+    <Property Id="OINK_START_AT_LOGIN" Secure="yes" />
+    <Property Id="OINK_SAVED_LOGIN">
+      <RegistrySearch Id="SavedLoginChoice" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run"
+                      Name="$(var.RunValue)" Type="raw" />
+    </Property>
+    <SetProperty Id="OinkLogin" Action="DefaultLoginChoice" Value="1" Before="OinkWelcomeDlg" Sequence="ui"
+                 Condition="UILevel = 5 AND NOT Installed AND (NOT WIX_UPGRADE_DETECTED OR OINK_SAVED_LOGIN)" />
+    <Property Id="OINK_SAVED_DESKTOP">
+      <RegistrySearch Id="SavedDesktopChoice" Root="HKLM" Key="$(var.RegistryKey)"
+                      Name="DesktopShortcut" Type="raw" Bitness="always64" />
+    </Property>
+    <SetProperty Id="OINK_DESKTOP_SHORTCUT" Action="RestoreDesktopChoice" Value="[OINK_SAVED_DESKTOP]" After="AppSearch"
+                 Sequence="both" Condition="NOT OINK_DESKTOP_SHORTCUT AND OINK_SAVED_DESKTOP" />
+    <SetProperty Id="OINK_DESKTOP_SHORTCUT" Action="DefaultDesktopChoice" Value="1" Before="OinkWelcomeDlg" Sequence="ui"
+                 Condition="UILevel = 5 AND NOT Installed AND NOT WIX_UPGRADE_DETECTED AND NOT OINK_DESKTOP_SHORTCUT" />
+    <SetProperty Id="OinkDesktop" Value="1" Action="ShowDesktopChoice" After="DefaultDesktopChoice" Sequence="ui"
+                 Condition="OINK_DESKTOP_SHORTCUT = &quot;1&quot;" />
+    <UIRef Id="OinkInstallDialogs" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.DialogBmp)" />
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.BannerBmp)" />
+    <SummaryInformation Description="$(var.ProductName) $(var.DisplayVersion)" />
+    <!-- Install under the maintenance lock, then remove the old product inside
+         the same rollback transaction. Component GUIDs/paths must remain stable. -->
+    <MajorUpgrade DowngradeErrorMessage="A newer build is already installed." Schedule="afterInstallExecute" />
+    <MediaTemplate EmbedCab="yes" />
+    <!-- MSI reports VersionNT=603 even on Windows 10/11. Use the OS build
+         registry value as well, instead of an impossible VersionNT=1000 gate. -->
+    <Property Id="WINDOWSBUILD">
+      <RegistrySearch Id="WindowsBuild" Root="HKLM" Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+                      Name="CurrentBuildNumber" Type="raw" Bitness="always64" />
+    </Property>
+    <Launch Condition="Installed OR (VersionNT64 AND WINDOWSBUILD &gt;= $(var.MinimumWindowsBuild))" Message="Windows 10 version 1809 (build 17763) or later, or Windows 11 x64 is required." />
+    <!-- A per-machine product needs the machine-wide Evergreen Runtime so every
+         user session can open the UI. Do not silently download during install. -->
+    <Property Id="WEBVIEW2RUNTIME">
+      <RegistrySearch Id="WebView2Runtime" Root="HKLM" Bitness="always32"
+                      Key="SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+                      Name="pv" Type="raw" />
+    </Property>
+    <Launch Condition="Installed OR (WEBVIEW2RUNTIME AND WEBVIEW2RUNTIME &lt;&gt; &quot;0.0.0.0&quot;)"
+            Message="Install the Microsoft Edge WebView2 Evergreen Runtime for all users, then run Oink Setup again: https://developer.microsoft.com/microsoft-edge/webview2/" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPCOMMENTS" Value="Uninstalling removes Oink and its local user data." />
+    <!-- Start maps a real shortcut target to its removable ARP product. Set the
+         resolved primary folder after costing, not a literal formatted value. -->
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" After="CostFinalize" Sequence="execute" />
+    <Property Id="MSIRESTARTMANAGERCONTROL" Value="Disable" />
+    <!-- Never restart or prompt on install, upgrade, repair or silent runs.
+         Only CheckMicrophoneRestart clears it, for an interactive uninstall
+         whose microphone removal needs a restart; the full-UI wizard's
+         Remove button also clears it (Dialogs.wxs) so that UI can prompt. -->
+    <Property Id="REBOOT" Value="ReallySuppress" />
+    <!-- Product builds can change without changing PE semver. Force the owned
+         payload/receipt to match this MSI even when file versions are equal.
+         No user data is an MSI component. Never use 'v' on a fresh install. -->
+    <Property Id="REINSTALLMODE" Value="amus" />
+    <!-- Resolve from the system-known folder again in native preflight. No UI
+         path selector and no user-supplied install directory are supported. -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="$(var.InstallDirectory)">
+        <Component Id="InstallRoot" Guid="*">
+          <CreateFolder>
+            <PermissionEx Sddl="O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRGX;;;BU)" />
+          </CreateFolder>
+          <RegistryValue Root="HKLM" Key="$(var.RegistryKey)" Name="InstallRoot" Value="[INSTALLFOLDER]" Type="string" KeyPath="yes" />
+          <RegistryValue Root="HKLM" Key="$(var.RegistryKey)" Name="Build" Value="$(var.Build)" Type="integer" />
+          <RegistryValue Root="HKLM" Key="$(var.RegistryKey)" Name="DisplayVersion" Value="$(var.DisplayVersion)" Type="string" />
+          <RegistryValue Root="HKLM" Key="$(var.RegistryKey)" Name="ProductCode" Value="[ProductCode]" Type="string" />
+          <RegistryValue Root="HKLM" Key="$(var.RegistryKey)" Name="DesktopShortcut" Value="[OINK_DESKTOP_SHORTCUT]" Type="string" />
+          <RegistryValue Id="ArpDisplayVersion" Root="HKLM"
+                         Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\[ProductCode]"
+                         Name="DisplayVersion" Value="$(var.DisplayVersion)" Type="string" />
+        </Component>
+        <Component Id="InputService" Guid="*">
+          <File Id="ServiceExe" Source="$(var.Payload)/$(var.ServiceExe)" KeyPath="yes" />
+          <ServiceInstall Id="InputServiceInstall" Name="$(var.ServiceName)" DisplayName="$(var.ServiceDisplayName)"
+                          Type="ownProcess" Start="auto" ErrorControl="normal" Account="LocalSystem" Vital="yes" />
+          <ServiceControl Id="InputServiceControl" Name="$(var.ServiceName)" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
+        </Component>
+        <Component Id="UserEntry" Guid="*">
+          <File Id="UiExe" Source="$(var.Payload)/$(var.UiExe)" KeyPath="yes">
+            <Shortcut Id="StartMenuEntry" Directory="ProgramMenuFolder" Name="$(var.ProductName)"
+                      Advertise="no" Icon="OinkIcon.ico" IconIndex="0" WorkingDirectory="INSTALLFOLDER">
+              <ShortcutProperty Key="System.AppUserModel.ID" Value="com.hachiwii.oink.ui" />
+            </Shortcut>
+          </File>
+          <!-- UiExe hosts the user backend in service mode; the SYSTEM input broker and
+               recovery CLI own no LAN listeners. Keep this component/key path
+               stable so the late major-upgrade uninstall retains its rules.
+               Scope=any also supports peers across LAN subnets/manual IP. -->
+          <fw:FirewallException Id="BackendUdpInbound" File="UiExe"
+                                Name="$(var.ProductName) - Discovery and QUIC (UDP)"
+                                Description="LAN discovery (mDNS/DNS-SD and beacons) and encrypted device links."
+                                Grouping="$(var.ProductName)" Protocol="udp" Profile="all"
+                                Scope="any" Outbound="no" Action="allow" Enabled="yes" IgnoreFailure="no" />
+          <fw:FirewallException Id="BackendTcpInbound" File="UiExe"
+                                Name="$(var.ProductName) - Bulk transfer (TCP)"
+                                Description="Oink - Bulk transfer (TCP)"
+                                Grouping="$(var.ProductName)" Protocol="tcp" Profile="all"
+                                Scope="any" Outbound="no" Action="allow" Enabled="yes" IgnoreFailure="no" />
+        </Component>
+        <Component Id="PasteMenu" Guid="*">
+          <!-- The transparent light/dark marks are compiled into the signed
+               state-handler DLL; keeping this component as the protected
+               install boundary makes Icon registry values safe to resolve. -->
+          <File Id="PasteMenuDll" Source="$(var.Payload)/OinkPasteMenu.dll" KeyPath="yes" />
+        </Component>
+        <Component Id="CredentialProvider" Guid="*">
+          <File Id="CredentialProviderDll" Source="$(var.Payload)/OinkCredentialProvider.dll" KeyPath="yes" />
+        </Component>
+        <Component Id="RecoveryCli" Guid="*">
+          <File Id="AgentExe" Source="$(var.Payload)/$(var.AgentExe)" KeyPath="yes" />
+        </Component>
+        <Component Id="Receipt" Guid="*">
+          <File Id="InstalledReceipt" Source="$(var.Payload)/$(var.Receipt)" KeyPath="yes" />
+        </Component>
+        <Component Id="BuildMetadata" Guid="*">
+          <File Id="BuildMetadataFile" Source="$(var.Payload)/oink-build.json" KeyPath="yes" />
+        </Component>
+        <Component Id="ReportManifest" Guid="*">
+          <File Id="ReportManifestFile" Source="$(var.Payload)/report-manifest.json" KeyPath="yes" />
+        </Component>
+        <?if $(var.HasUpdateWorker) = 1 ?>
+        <Component Id="UpdateWorker" Guid="*">
+          <File Id="WorkerExe" Source="$(var.Payload)/$(var.WorkerExe)" KeyPath="yes" />
+        </Component>
+        <?endif?>
+        <?if $(var.HasCrashCollector) = 1 ?>
+        <Component Id="CrashCollector" Guid="*">
+          <File Id="CollectorExe" Source="$(var.Payload)/$(var.CollectorExe)" KeyPath="yes" />
+        </Component>
+        <?endif?>
+        <Directory Id="MAINTENANCEFOLDER" Name="$(var.MaintenanceDirectory)">
+          <Component Id="MaintenanceRoot" Guid="$(var.MaintenanceGuid)">
+            <!-- Stable component ownership retains state during major upgrades.
+                 Full-uninstall commit removes it after MSI completes; active
+                 worker transactions retain their exclusive lock and state. -->
+            <CreateFolder>
+              <PermissionEx Sddl="O:BAG:BAD:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)" />
+            </CreateFolder>
+          </Component>
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+    <!-- DesktopFolder resolves to Public Desktop for ALLUSERS=1. Machine-owned
+         shortcuts must not belong to the administrator who answered UAC. -->
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopEntry" Guid="*" Transitive="yes" Condition="OINK_DESKTOP_SHORTCUT = &quot;1&quot;">
+        <Shortcut Id="DesktopShortcut" Name="$(var.ProductName)" Target="[#UiExe]"
+                  WorkingDirectory="INSTALLFOLDER" Icon="OinkIcon.ico" IconIndex="0">
+          <ShortcutProperty Key="System.AppUserModel.ID" Value="com.hachiwii.oink.ui" />
+        </Shortcut>
+        <RegistryValue Root="HKLM" Key="$(var.RegistryKey)" Name="DesktopShortcutComponent"
+                       Value="1" Type="integer" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+    <Binary Id="InstallerCA" SourceFile="$(var.CustomAction)" />
+    <CustomAction Id="CheckInstallPath" BinaryRef="InstallerCA" DllEntry="CheckInstallPath" Execute="immediate" Return="check" />
+    <CustomAction Id="CheckProtectedState" BinaryRef="InstallerCA" DllEntry="CheckProtectedState" Execute="deferred" Impersonate="no" Return="check" />
+    <CustomAction Id="CheckQuiescence" BinaryRef="InstallerCA" DllEntry="CheckQuiescence" Execute="deferred" Impersonate="no" Return="check" />
+    <CustomAction Id="CleanupMicrophone" BinaryRef="InstallerCA" DllEntry="CleanupMicrophone" Execute="commit" Impersonate="no" Return="ignore" />
+    <!-- Commit actions cannot request a restart. After InstallFinalize this
+         immediate action turns the cleanup's volatile microphone restart
+         marker into Windows Installer's own restart prompt, for an
+         interactive uninstall only; REBOOT stays ReallySuppress otherwise. -->
+    <CustomAction Id="CheckMicrophoneRestart" BinaryRef="InstallerCA" DllEntry="CheckMicrophoneRestart" Execute="immediate" Return="ignore" />
+    <CustomAction Id="CleanupUserData" BinaryRef="InstallerCA" DllEntry="CleanupUserData" Execute="commit" Impersonate="no" Return="ignore" />
+    <CustomAction Id="CleanupMaintenance" BinaryRef="InstallerCA" DllEntry="CleanupMaintenance" Execute="commit" Impersonate="no" Return="ignore" />
+    <!-- Commit-only: a failed uninstall must not silently disable autostart. -->
+    <CustomAction Id="RemoveLoginEntry" BinaryRef="InstallerCA" DllEntry="RemoveLoginEntry" Execute="commit" Impersonate="no" Return="check" />
+    <!-- The elevated installer records the machine-level pre-login owner for
+         the installing user when launch at login was chosen. Return=ignore:
+         the product still installs; the backend reports the missing machine
+         part and the user can turn launch at login on again to approve. -->
+    <CustomAction Id="EnablePrelogin" BinaryRef="InstallerCA" DllEntry="EnablePrelogin" Execute="deferred" Impersonate="no" Return="ignore" />
+    <SetProperty Id="EnablePrelogin" Value="[UserSID]" Before="EnablePrelogin" Sequence="execute"
+                 Condition="OINK_START_AT_LOGIN = &quot;1&quot; AND NOT REMOVE" />
+    <!-- Any standalone install/upgrade/repair (double-click, msiexec at any UI
+         level) reopens Oink in each session where PrepareUserSessions found it
+         running before asking it to quit (issue #36). Restart Manager is not
+         used: it restarts only applications it shut down itself, and Oink
+         quits through its own ordered Quit before InstallValidate. Commit-only
+         SYSTEM action; OinkInput creates the UI with the session's own token. -->
+    <CustomAction Id="RelaunchUserSessions" BinaryRef="InstallerCA" DllEntry="RelaunchUserSessions" Execute="commit" Impersonate="no" Return="ignore" />
+    <!-- Called only by the successful full-UI Finish button, in the client. -->
+    <CustomAction Id="FinishInstall" BinaryRef="InstallerCA" DllEntry="FinishInstall" Execute="immediate" Return="check" />
+    <!-- Execute sequence only: full UI must return from its final Install/
+         repair/remove confirmation and show ProgressDlg before requesting Quit.
+         A UI action Before ExecuteAction can be linked before the maintenance
+         welcome dialog, disconnecting a user controlling Windows through Oink.
+         Immediate impersonating code retains the caller token and runs before
+         InstallValidate files-in-use detection, including /qn and ARP removal.
+         The post-StopServices gate also waits for the existing SCM notification
+         to drain other sessions. Nested old-product removal skips the request.
+         No Restart Manager force-close or process kill. -->
+    <CustomAction Id="PrepareUserSessions" BinaryRef="InstallerCA" DllEntry="PrepareUserSessions" Execute="immediate" Return="check" />
+    <!-- OinkInput registers only its own CLSID on startup. Uninstall asks the
+         protected SYSTEM service image to remove it and the auto unlock vault
+         before any payload is removed. The DLL action runs the image and copies
+         its exit code and stderr (the failing step) into the MSI log; an EXE
+         action logged only "error code 1" (issue #46). Fatal: a failed removal
+         rolls back instead of leaving the provider or the vault behind.
+         Upgrade keeps registration pointing at the stable MSI-owned DLL path. -->
+    <CustomAction Id="UnregisterCredentialProvider" BinaryRef="InstallerCA" DllEntry="UnregisterCredentialProvider"
+                  Execute="deferred" Impersonate="no" Return="check" />
+    <InstallExecuteSequence>
+      <Custom Action="UnregisterCredentialProvider" Before="RemoveFiles"
+              Condition='REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE' />
+      <Custom Action="PrepareUserSessions" Before="InstallValidate" Condition="NOT UPGRADINGPRODUCTCODE" />
+      <!-- RegisterProduct writes the numeric upgrade version to ARP. Apply the
+           human version afterward through the transactional Registry table, so
+           repair/rollback/uninstall retain MSI ownership of the single entry.
+           The pinned WiX standard RegisterProduct position is 6100; the native
+           table check verifies this ordering before any package is accepted. -->
+      <WriteRegistryValues Sequence="6101" />
+      <!-- Keep the broker and its helpers stopped through the nested old MSI
+           uninstall. Start the new service inside the transaction afterward;
+           otherwise the old preflight sees the new service's interactive helper. -->
+      <StartServices Sequence="6502" />
+      <Custom Action="CheckInstallPath" Before="InstallInitialize" />
+      <Custom Action="CheckProtectedState" After="InstallInitialize" />
+      <Custom Action="CheckQuiescence" After="StopServices" />
+      <!-- Commit-only: never destroy user data if MSI rolls back. Cloud Files
+           unregister happens inside this action before deleting any data tree. -->
+      <Custom Action="CleanupMicrophone" Before="CleanupUserData" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="CheckMicrophoneRestart" After="InstallFinalize" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="CleanupUserData" Before="CleanupMaintenance" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="CleanupMaintenance" Before="InstallFinalize" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="RemoveLoginEntry" Before="RemoveRegistryValues" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+      <Custom Action="EnablePrelogin" After="StartServices" Condition="OINK_START_AT_LOGIN = &quot;1&quot; AND NOT REMOVE" />
+      <Custom Action="RelaunchUserSessions" After="EnablePrelogin" Condition="NOT REMOVE" />
+    </InstallExecuteSequence>
+    <Feature Id="Product" Title="$(var.ProductName)" Level="1">
+      <ComponentRef Id="InstallRoot" />
+      <ComponentRef Id="InputService" />
+      <ComponentRef Id="UserEntry" />
+      <ComponentRef Id="RecoveryCli" />
+      <ComponentRef Id="PasteMenu" />
+      <ComponentRef Id="CredentialProvider" />
+      <ComponentRef Id="Receipt" />
+      <ComponentRef Id="BuildMetadata" />
+      <ComponentRef Id="ReportManifest" />
+      <?if $(var.HasUpdateWorker) = 1 ?>
+      <ComponentRef Id="UpdateWorker" />
+      <?endif?>
+      <?if $(var.HasCrashCollector) = 1 ?>
+      <ComponentRef Id="CrashCollector" />
+      <?endif?>
+      <ComponentRef Id="MaintenanceRoot" />
+      <ComponentRef Id="DesktopEntry" />
+      <ComponentGroupRef Id="Notices" />
+    </Feature>
+  </Package>
+</Wix>

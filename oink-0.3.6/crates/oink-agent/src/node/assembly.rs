@@ -1,0 +1,451 @@
+//! Startup and reset assembly for the backend.
+use super::*;
+use crate::config_module::{ConfigDeps, ConfigModule};
+use crate::threads::input::{InputCommand, InputSnapshots, InputThread};
+use oink_foundation::realtime::Tier;
+use oink_network::link::{LinkConfig, LinkLayer};
+
+impl Node {
+    #[cfg(test)]
+    pub(crate) fn offer_profile() -> oink_network::negotiation::OfferProfile {
+        application_profile()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn offer_profile_for(profile: super::Profile) -> oink_network::negotiation::OfferProfile {
+        offer_profile(profile.components())
+    }
+
+    pub(super) async fn start_sharing(&self) -> anyhow::Result<()> {
+        self.start_sharing_with_profile(offer_profile(self.inner.profile.components()))
+            .await
+    }
+
+    pub(super) async fn start_sharing_with_profile(
+        &self,
+        profile: oink_network::negotiation::OfferProfile,
+    ) -> anyhow::Result<()> {
+        let components = self.inner.profile.components();
+        // The caller serializes first start/reset. Check before LinkLayer::start: even
+        // a bound socket would violate the IPC-only unreadable-state contract.
+        crate::config_module::group_store::load(
+            &self.inner.data_dir.join(crate::config_module::group_store::STATE_FILE),
+            self.id(),
+        )
+        .context("read group state before sharing")?;
+        if components.companions
+            && let Some(backend) = &self.inner.display_backend
+        {
+            backend
+                .initialize_visibility(&self.inner.data_dir)
+                .context("initialize display visibility storage")?;
+        }
+        let initial_displays = self.current_displays().context("read initial displays")?;
+        {
+            let _gate = self.owner_gate();
+            lock(&self.inner.config)
+                .seed_screen_preferences(
+                    initial_displays
+                        .iter()
+                        .map(|display| (display.key.as_str(), display.is_virtual)),
+                )
+                .context("persist initial screen preferences")?;
+        }
+        let (links, config_port) = LinkLayer::start(LinkConfig {
+            profile,
+            identity: self.inner.identity.clone(),
+            boot: self.inner.boot,
+            bind: (self.inner.network.bind_ip, self.inner.network.port).into(),
+            // Selected from the loaded two-tier measurements on native systems.
+            // The network owner still enforces every class/round time budget.
+            tier: Tier::Realtime,
+        })
+        .await
+        .context("bind backend network")?;
+        if self.inner.native_surfaces {
+            if let Some(trail) = oink_locator::CursorTrail::platform() {
+                let _ = self.inner.cursor_trail.set(trail);
+            }
+            self.apply_trail_appearance();
+            self.watch_trail_appearance();
+        }
+        // Registration precedes discovery and every possible ready notification.
+        // A profile without a component leaves its stream kinds unregistered:
+        // the link layer then refuses those streams as Unsupported (protocol v1).
+        let input_port = links.register(crate::streams::input::KINDS);
+        let content = components.content.then(|| {
+            (
+                links.register(crate::streams::clipboard::KINDS),
+                links.register(&[oink_protocol::frame::StreamKind::Cache]),
+                links.register(crate::streams::dnd::KINDS),
+            )
+        });
+        let audio_port = components.audio.then(|| links.register(crate::streams::audio::KINDS));
+        let companions = components.companions.then(|| {
+            (
+                links.register(crate::streams::projection::KINDS),
+                links.register(crate::streams::wallpaper::KINDS),
+                links.register(&[oink_protocol::frame::StreamKind::LayoutProfilesV3]),
+            )
+        });
+        let diagnostics_port = links.register(crate::streams::diagnostics::KINDS);
+        self.inner
+            .links
+            .set(links.clone())
+            .map_err(|_| anyhow::anyhow!("network already started"))?;
+
+        let group = ConfigModule::start_with_config(
+            ConfigDeps {
+                config: self.inner.config.clone(),
+                owner_gate: self.inner.owner_gate.clone(),
+                data_dir: self.inner.data_dir.clone(),
+                links: links.clone(),
+                port: config_port,
+                identity: self.inner.identity.clone(),
+                application: Arc::new(Application(Arc::downgrade(&self.inner))),
+            },
+            self.inner.network.clone(),
+        )
+        .context("start configuration owner")?;
+        self.inner
+            .group
+            .set(group.clone())
+            .map_err(|_| anyhow::anyhow!("configuration already started"))?;
+        // Initial inputs are published before the input owner takes its first turn.
+        // The module retains startup state and broadcasts later changes itself.
+        self.publish_local_options();
+        self.publish_local_permissions();
+        #[cfg(windows)]
+        let initial_displays = {
+            let node = self.clone();
+            tokio::task::spawn_blocking(move || {
+                if components.companions
+                    && let Err(error) = node.apply_windows_startup_layout()
+                {
+                    tracing::warn!(%error,"Windows startup display layout apply failed");
+                }
+                node.current_displays()
+            })
+            .await
+            .context("join Windows startup display layout")??
+        };
+        let initial_group = group.clone();
+        tokio::task::spawn_blocking(move || initial_group.initialize_displays(initial_displays))
+            .await
+            .context("join display initialization")?
+            .context("initialize group displays")?;
+        // Preserve the initial list before exposing the started Node to callers,
+        // including a crash before a later profile handoff callback.
+        let node = self.clone();
+        let _ = tokio::task::spawn_blocking(move || {
+            // Publish the first native observation before issuing a ready profile
+            // token. Leaving it to the observer lets an unchanged desktop acquire
+            // its first native token between the UI query and commit, spuriously
+            // rejecting the edit as stale. Failed/unsupported reads still leave
+            // rigid editing available; the observer retains its normal retries.
+            let _ = node.observe_native_arrangement("startup");
+            node.refresh_layout_profiles();
+        })
+        .await;
+        let applied = group.applied();
+        let settings = self.settings();
+        let directory = self.log_dir().join("Diagnostics");
+        let recorder = crate::diagnostics::Recorder::start_suspended(
+            directory,
+            self.id(),
+            Some(applied.group),
+            settings.diagnostics_enabled,
+            applied.paused,
+            Some(crate::diagnostics::collection::Context::for_node(self).context("prepare diagnostic context")?),
+        )
+        .context("start diagnostic recorder")?;
+        #[cfg(windows)]
+        if self.inner.native_services {
+            self.inner.reports.set_local_capture(recorder.crash_target());
+        }
+        let mut recovery_guard = crate::diagnostics::StartupRecoveryGuard(Some(recorder.clone()));
+        group
+            .observe_layout(&recorder)
+            .context("observe initial diagnostic layout")?;
+        recorder.install_native_clock();
+        oink_input::native_lifecycle::set_lifecycle(settings.diagnostics_enabled);
+        let trace = crate::diagnostics::input_trace::InputTrace::for_recorder(&recorder);
+        let timing: Arc<dyn oink_foundation::handoff_timing::Observer> = trace.clone();
+        oink_foundation::handoff_timing::set_observer(Arc::downgrade(&timing));
+        let _ = trace.config.set(group.clone());
+        let _ = self.inner.input_trace.set(trace.clone());
+        // A restarted Windows candidate enters health-only admission before
+        // input, clipboard, drag and audio owners can accept any business work.
+        #[cfg(windows)]
+        if self.inner.native_services {
+            // Private fake-platform fixtures must not contact the installed
+            // Windows update service or join its candidate health transaction.
+            crate::update::startup_gate()?;
+        }
+        let inject = crate::threads::inject::start_with_trace(
+            self.inner.input_backend.clone(),
+            Box::new(|_| {}),
+            Some(trace.clone()),
+        )
+        .context("start input injector")?;
+        let (main, receive) = crate::threads::main_channel();
+        let _ = self.inner.main_commands.set(main.clone());
+        let trace_wake = main.notifier();
+        trace.set_wake(trace_wake.clone());
+        oink_input::native_lifecycle::set_wake(trace_wake);
+        let (input, notices) = InputThread::start(
+            links.boot(),
+            InputSnapshots {
+                mode_switch_in_callback: self.inner.mode_switch_in_callback,
+                capture_reports_key_repeat: self.inner.capture_reports_key_repeat,
+                local_input_transform: settings.input_transform.clone(),
+                layout: group.router_layout(),
+                settings: self.inner.input_settings.clone(),
+                environment: self.inner.input_environment.clone(),
+            },
+            inject,
+            main,
+        )
+        .context("start input owner")?;
+        let input = Arc::new(input);
+        self.inner
+            .input
+            .set(input.clone())
+            .map_err(|_| anyhow::anyhow!("input already started"))?;
+        // Native input must not use the layout catalog's retained disabled targets.
+        self.refresh_active_input_displays()
+            .context("read active input displays")?;
+        input.send(InputCommand::Hotkeys(crate::hotkeys::bindings(
+            &self.effective_hotkeys(),
+        )));
+        input.send(InputCommand::LocalFeel(self.inner.input_backend.feel_profile()));
+        input.send(InputCommand::EventFrequency(settings.event_frequency));
+        let injection = self.inner.input_backend.injection_available();
+        input.send(InputCommand::InjectionAvailable(injection));
+        let mut tasks = vec![crate::streams::input::InputStreams::spawn_with_port(
+            links,
+            group.clone(),
+            input,
+            notices,
+            !inject_blocked(&self.inner.input_backend.permissions()) && injection != Some(false),
+            input_port,
+        )];
+        let (clip_port, cache_port, dnd_port) = match content {
+            Some((clip, cache, dnd)) => (Some(clip), Some(cache), Some(dnd)),
+            None => (None, None, None),
+        };
+        if let (Some(backend), Some(clip_port)) = (&self.inner.clipboard_backend, clip_port) {
+            tasks.push(
+                crate::clip::start_link_runtime(self.clone(), clip_port, backend.clone())
+                    .context("start clipboard owner")?,
+            );
+        }
+        if let Some(audio_port) = audio_port {
+            let (audio, audio_task) =
+                crate::audio::start_link_runtime(self.clone(), audio_port).context("start audio owner")?;
+            self.inner
+                .audio
+                .set(audio)
+                .map_err(|_| anyhow::anyhow!("audio already started"))?;
+            tasks.push(audio_task);
+        }
+        if let Some(cache_port) = cache_port {
+            tasks.push(crate::cache::start(self.clone(), cache_port));
+        }
+        if let Some((projection_port, wallpaper_port, profiles_port)) = companions {
+            tasks.push(
+                crate::projection::start(self.clone(), projection_port, self.inner.native_surfaces)
+                    .context("start projection owner")?,
+            );
+            tasks.push(
+                crate::wallpaper::start_link_runtime(self.clone(), wallpaper_port).context("start wallpaper owner")?,
+            );
+            tasks.push(crate::layout_profiles::sync::start(self.clone(), profiles_port));
+        }
+        let (diagnostics, diagnostics_task) =
+            crate::diagnostics::collection::start_link_runtime(self.clone(), diagnostics_port, recorder)?;
+        self.inner
+            .diagnostics
+            .set(diagnostics)
+            .map_err(|_| anyhow::anyhow!("diagnostics already started"))?;
+        tasks.push(diagnostics_task);
+        if let Some(dnd_port) = dnd_port {
+            let (dnd, dnd_task) = crate::dnd::start_link_runtime(self.clone(), dnd_port)?;
+            self.inner
+                .dnd
+                .set(dnd)
+                .map_err(|_| anyhow::anyhow!("drag task already started"))?;
+            tasks.push(dnd_task);
+        }
+        if components.content {
+            tasks.push(self.start_transfer_monitor());
+        }
+        tasks.extend(self.start_prelogin_export());
+        lock(&self.inner.tasks).extend(tasks);
+        self.start_main_commands(receive)?;
+        self.start_observers()?;
+        recovery_guard.0 = None;
+        *lock(&self.inner.group_unreadable) = None;
+        self.emit_group();
+        self.emit_layout();
+        Ok(())
+    }
+
+    pub(crate) async fn reset_unreadable_group(&self) -> api::ApiResult<()> {
+        let _startup = self.inner.startup.lock().await;
+        if self.inner.group.get().is_some() || lock(&self.inner.group_unreadable).is_none() {
+            return Err(api::ApiError::InvalidState {
+                message: "组状态可以读取，不能重置运行中的共享".into(),
+            });
+        }
+        crate::config_module::reset_group_state(self.data_dir(), &self.inner.identity).map_err(|error| {
+            api::ApiError::Unavailable {
+                message: error.to_string(),
+            }
+        })?;
+        self.start_sharing().await.map_err(|error| api::ApiError::Unavailable {
+            message: error.to_string(),
+        })?;
+        // The host skipped native DnD while the state was unreadable. Reset runs
+        // after the native dispatcher is ready, so finish the same activation here.
+        if self.inner.native_surfaces {
+            let node = self.clone();
+            crate::backend::on_main(move || node.start_platform_dnd());
+        }
+        Ok(())
+    }
+}
+
+struct Application(std::sync::Weak<Inner>);
+impl crate::config_module::ConfigApplication for Application {
+    fn prepare_profile_join_with_target(
+        &self,
+        intent: &oink_protocol::v1::dto::MergeIntent,
+        target: &oink_protocol::v1::dto::GroupState,
+    ) -> Result<(), String> {
+        let inner = self.0.upgrade().ok_or("backend stopped")?;
+        Node { inner }
+            .prepare_profile_join(intent, target)
+            .map_err(|e| e.message)
+    }
+
+    fn apply_state(&self, state: &crate::config_module::group_store::StoredGroupState) -> Result<(), String> {
+        let inner = self.0.upgrade().ok_or("backend stopped")?;
+        let register = state.layout_register().map_err(|error| error.to_string())?;
+        let value = oink_protocol::v1::layout::register_value(&register).map_err(|error| error.to_string())?;
+        let layout = crate::config_module::layout_wire::from_wire(&value).map_err(|error| error.to_string())?;
+        // Native visibility is a side effect of an accepted global layout.
+        // A platform failure is reported by the owner path and must not make
+        // a valid shared register fail C0 admission.
+        if let Err(error) = (crate::node::Node { inner: inner.clone() }).apply_global_layout_visibility(&layout) {
+            tracing::warn!(%error, "global layout visibility could not be applied locally");
+        }
+
+        if let Some(group) = inner.group.get() {
+            let roster = state.state.roster().map_err(|error| error.to_string())?;
+            let anchor = oink_network::roster::Anchor {
+                group: state.group(),
+                root: roster.root_id().map_err(|error| error.to_string())?.0,
+            };
+            // The configuration owner has already authorized this candidate.
+            // Signed self-removal is applied before the fresh group exists;
+            // close old-group surfaces before exposing that intermediate roster.
+            let roster = oink_network::roster::Roster::verify(roster, anchor).map_err(|error| error.to_string())?;
+            if group.applied().group != state.group() || !roster.contains(inner.me) {}
+        }
+        Ok(())
+    }
+}
+
+/// Offer only the capabilities of installed components. Without content, audio,
+/// companions or pairing, peers never open those streams or pairing with this
+/// backend; the v1 baseline (including the clipboard decoder) stays offered.
+fn offer_profile(components: super::Components) -> oink_network::negotiation::OfferProfile {
+    let mut profile = application_profile();
+    if components.content && components.audio && components.companions && components.pairing {
+        return profile;
+    }
+    let mut removed: Vec<&str> = Vec::new();
+    if !components.content {
+        removed.extend(
+            oink_clipboard::negotiation::CAPABILITIES
+                .iter()
+                .filter(|c| !oink_protocol::v1::registry::BASELINE.contains(c)),
+        );
+        profile.formats = oink_network::negotiation::OfferProfile::default().formats;
+    }
+    if !components.audio {
+        removed.extend(oink_audio::negotiation::CAPABILITIES);
+        profile.audio = Vec::new();
+    }
+    if !components.companions {
+        removed.extend([
+            "oink.wallpaper/1",
+            "oink.layout.projection/1",
+            "oink.layout.preview/1",
+            "oink.layout.profiles/3",
+            "oink.layout.topology/1",
+            "oink.notify/1",
+            "oink.notify.microphone/1",
+            "oink.power/1",
+            // No visible windows on the logon desktop: no trail.
+            "oink.input.trail/1",
+        ]);
+    }
+    if !components.pairing {
+        removed.push("oink.pairing/1");
+    }
+    profile.capabilities.retain(|c| !removed.contains(&c.as_str()));
+    profile
+}
+
+/// Capabilities describe implemented modules. Local projection permission is
+/// enforced by its stream owner so toggling it never requires reconnecting.
+fn application_profile() -> oink_network::negotiation::OfferProfile {
+    let mut profile = oink_network::negotiation::OfferProfile::default();
+    profile.capabilities.extend(
+        oink_clipboard::negotiation::CAPABILITIES
+            .iter()
+            .copied()
+            .chain(oink_audio::negotiation::CAPABILITIES.iter().copied())
+            .chain([
+                "oink.input.relative/1",
+                "oink.input.gestures/1",
+                "oink.input.contacts/1",
+                "oink.input.trail/1",
+                "oink.pointer.move/1",
+                "oink.pointer.move-hidden/1",
+                "oink.focus.local-click/1",
+                "oink.auto-unlock/1",
+                "oink.auto-unlock.sync/1",
+                "oink.pointer.lock-escape/1",
+                "oink.pointer.entry-protection/1",
+                "oink.input.edge-trigger/1",
+                "oink.device-resources/1",
+                "oink.device-options/1",
+                "oink.input.mouse-disabled/1",
+                "oink.input.accessibility/1",
+                "oink.input.touchpad-options/1",
+                "oink.input.keymap-none/1",
+                oink_routing::control::WINDOWS_LOCK_CAPABILITY,
+                "oink.input.scroll-pixels/1",
+                "oink.notify/1",
+                "oink.notify.microphone/1",
+                "oink.power/1",
+                "oink.wallpaper/1",
+                "oink.layout.projection/1",
+                "oink.layout.profiles/3",
+                "oink.layout.topology/1",
+                "oink.layout.arrangement/1",
+                "oink.layout.preview/1",
+                "oink.diagnostics.collect/1",
+                "oink.diagnostics.layout/1",
+            ])
+            .map(str::to_owned),
+    );
+    profile.capabilities.sort();
+    profile.capabilities.dedup();
+    profile.formats = oink_clipboard::negotiation::formats();
+    profile.audio = oink_audio::negotiation::audio();
+    profile
+}

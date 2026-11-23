@@ -1,0 +1,29 @@
+[package]
+name = "oink-update"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+test-feed = []
+http = ["dep:reqwest"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+base64 = "0.22"
+ed25519-dalek = { version = "2.2", features = ["pkcs8", "pem"] }
+sha2 = "0.10"
+time = { version = "0.3", features = ["parsing", "formatting"] }
+url = "2.5"
+semver = "1"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"], optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

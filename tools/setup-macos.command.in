@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")"
+file='@NAME@'
+expected='@SHA256@'
+url='@URL@'
+verify() {
+    actual=$(/usr/bin/shasum -a 256 "$1")
+    if [ "${actual%% *}" != "$expected" ]; then
+        echo "Installer checksum mismatch: $1" >&2
+        exit 1
+    fi
+}
+if [ ! -f "$file" ]; then
+    stage=$(/usr/bin/mktemp -d "./.deskspan-XXXXXX")
+    trap '/bin/rm -f "$stage/$file"; /bin/rmdir "$stage"' EXIT
+    /usr/bin/curl --fail --location --retry 2 --connect-timeout 20 --max-time 900 --output "$stage/$file" "$url"
+    verify "$stage/$file"
+    # Link within the same directory tree so a concurrent installer cannot be overwritten.
+    /bin/ln "$stage/$file" "$file"
+fi
+verify "$file"
+if [ "${1:-}" != "--verify-only" ]; then
+    /usr/bin/open "$file"
+fi

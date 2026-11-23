@@ -1,0 +1,22 @@
+//! Group-owned saved layouts, independent of the frozen baseline layout register.
+pub mod model;
+pub(crate) mod render;
+pub mod types;
+
+mod autosave;
+mod commands;
+mod composition;
+#[cfg(all(test, debug_assertions))]
+mod integration_tests;
+mod join;
+mod merge;
+#[cfg(test)]
+mod merge_policy_tests;
+pub mod native;
+pub mod state;
+pub mod store;
+pub(crate) mod sync;
+#[cfg(test)]
+mod tests;
+pub mod topology;
+pub mod wire;

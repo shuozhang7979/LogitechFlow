@@ -1,0 +1,39 @@
+@echo off
+setlocal EnableExtensions DisableDelayedExpansion
+pushd "%~dp0" || exit /b 1
+set "file=@NAME@"
+set "expected=@SHA256@"
+set "url=@URL@"
+if exist "%file%" goto verify_local
+set "stage=.deskspan-%RANDOM%-%RANDOM%"
+mkdir "%stage%" || goto fail
+curl.exe --fail --location --retry 2 --connect-timeout 20 --max-time 900 --output "%stage%\%file%" "%url%"
+if errorlevel 1 goto download_failed
+set "candidate=%stage%\%file%"
+call :verify || goto download_failed
+powershell.exe -NoLogo -NoProfile -Command "try { [IO.File]::Move($env:candidate,$env:file) } catch { Write-Error $_; exit 1 }"
+if errorlevel 1 goto download_failed
+rmdir "%stage%"
+
+:verify_local
+set "candidate=%file%"
+call :verify || goto fail
+if /i "%~1"=="--verify-only" goto success
+msiexec.exe /i "%file%"
+if errorlevel 1 goto fail
+
+:success
+popd
+exit /b 0
+
+:verify
+powershell.exe -NoLogo -NoProfile -Command "try { $s=[IO.File]::OpenRead($env:candidate); try { $h=[Security.Cryptography.SHA256]::Create(); $actual=[BitConverter]::ToString($h.ComputeHash($s)).Replace('-',''); if ($actual -ne $env:expected) { throw 'Installer checksum mismatch' } } finally { $s.Dispose() } } catch { Write-Error $_; exit 1 }"
+exit /b %ERRORLEVEL%
+
+:download_failed
+if exist "%stage%\%file%" del /q "%stage%\%file%"
+rmdir "%stage%"
+:fail
+echo Could not verify or open the official runtime installer. 1>&2
+popd
+exit /b 1

@@ -1,0 +1,24 @@
+DeskSpan 0.1.0
+Copyright 2026 DeskSpan contributors
+
+DeskSpan is an independent downstream work for multi-computer workstations.
+The additions dated 2026-11-18 are the terminal layout wizard, multi-device
+arrangement and status commands, installer launchers, tests and release tooling.
+DeskSpan contributors release these additions under GPL-3.0-only (see LICENSE).
+
+Upstream attribution
+Oink — Oink Is Not only a KVM, by Hachiwii and the Oink contributors
+https://github.com/oinkvm/oink/releases/tag/v0.3.6
+The DeskSpan layout calculations use the native-to-canvas transform documented
+and implemented in crates/oink-agent/src/main.rs in that release. The runtime
+source archive is reproduced as published, with its attribution, license,
+section 7 additional terms and third-party notices. For upstream material
+see LICENSE-ADDITIONAL-TERMS.md and the upstream archive's NOTICE, LICENSE,
+THIRD_PARTY_LICENSES.md, third-party-licenses.json and licenses/ directory.
+DeskSpan uses the published local agent interface of that release.
+
+DeskSpan platform kits include the corresponding DeskSpan source archive.
+The install launcher retrieves the upstream platform installer from its original
+release URL. Each downloaded component retains its own terms and attribution.
+DeskSpan binaries use the Go standard library. Its license is included as
+Go-LICENSE.txt in each platform kit.

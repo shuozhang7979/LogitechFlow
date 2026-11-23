@@ -1,0 +1,2839 @@
+{
+  "schemaVersion": 1,
+  "components": [
+    {
+      "id": "native:Opus@1.6.1 (opusic-sys 0.7.5 vendor)",
+      "name": "Opus",
+      "version": "1.6.1 (opusic-sys 0.7.5 vendor)",
+      "ecosystem": "native",
+      "repository": "https://github.com/xiph/opus",
+      "source": {
+        "url": "https://crates.io/api/v1/crates/opusic-sys/0.7.5/download",
+        "integrity": "sha256:c9d1ecdf206421bc74343ab3bb2f30ad2abbfee41fa341f7181fecbaf957769a"
+      },
+      "licenseExpression": "BSD-3-Clause",
+      "selectedLicense": "BSD-3-Clause",
+      "licenseFiles": [
+        {
+          "path": "licenses/native/Opus-opusic-sys-0.7.5-COPYING.txt",
+          "sha256": "01e1167d54a096d123cf6dfbbeb19587278845c6481d2d66d545669846079551"
+        },
+        {
+          "path": "licenses/native/Opus-opusic-sys-0.7.5-AUTHORS.txt",
+          "sha256": "f9fd849e652219ce98e008303370b352d37663d0ffb27b8dc514ad93c9c7438b"
+        },
+        {
+          "path": "licenses/native/Opus-opusic-sys-0.7.5-opus.patch.txt",
+          "sha256": "60ae834c956b7c0dfda16a00495374cfdb13a3cf045dbe11a06453c8217c1a5e"
+        }
+      ],
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "cargoPackage": {
+        "name": "opusic-sys",
+        "version": "0.7.5",
+        "files": {
+          "opus/COPYING": "01e1167d54a096d123cf6dfbbeb19587278845c6481d2d66d545669846079551",
+          "opus/AUTHORS": "f9fd849e652219ce98e008303370b352d37663d0ffb27b8dc514ad93c9c7438b",
+          "opus.patch": "60ae834c956b7c0dfda16a00495374cfdb13a3cf045dbe11a06453c8217c1a5e"
+        }
+      },
+      "linkage": "static",
+      "patentNotices": "Patent declarations are retained verbatim in COPYING; see its IETF references.",
+      "modificationNotice": "The opusic-sys upstream vendor applies opus.patch to CMake runtime and OSCE build definitions. Oink makes no further Opus source changes; the patch is preserved with the native terms."
+    },
+    {
+      "id": "native:WixToolset.Firewall.wixext@5.0.2",
+      "name": "WixToolset.Firewall.wixext custom actions",
+      "version": "5.0.2",
+      "ecosystem": "native",
+      "repository": "https://github.com/wixtoolset/wix",
+      "source": {
+        "url": "https://github.com/wixtoolset/wix/tree/aa65968c419420d32e3e1b647aea0082f5ca5b78",
+        "integrity": "git:aa65968c419420d32e3e1b647aea0082f5ca5b78"
+      },
+      "licenseExpression": "MS-RL",
+      "selectedLicense": "MS-RL",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "licenses/native/WiX-5.0.2-LICENSE.txt",
+          "sha256": "dfdf2048787635215a6baf3b9d461dee89a2904d246787258a44f072a98d4786"
+        }
+      ],
+      "archive": {
+        "url": "https://api.nuget.org/v3-flatcontainer/wixtoolset.firewall.wixext/5.0.2/wixtoolset.firewall.wixext.5.0.2.nupkg",
+        "sha256": "c9a1c99afab82225127b34036b719dea6c98c451e21b341ae1c62a674d0ba5ef"
+      },
+      "compatibilityReview": "The MSI embeds unmodified native firewall custom actions from the WiX extension as separate installer files; these do not link Oink GPL code. This is an aggregate distribution, not relicensing MS-RL code to GPL. Preserve MS-RL and attribution; provide the complete corresponding WiX source at the pinned upstream commit with release source materials, including any changes if modified. No global MS-RL allowance is granted to application dependencies."
+    },
+    {
+      "id": "native:WixToolset.UI.wixext@5.0.2",
+      "name": "WixToolset.UI.wixext installer UI",
+      "version": "5.0.2",
+      "ecosystem": "native",
+      "repository": "https://github.com/wixtoolset/wix",
+      "source": {
+        "url": "https://github.com/wixtoolset/wix/tree/aa65968c419420d32e3e1b647aea0082f5ca5b78",
+        "integrity": "git:aa65968c419420d32e3e1b647aea0082f5ca5b78"
+      },
+      "licenseExpression": "MS-RL",
+      "selectedLicense": "MS-RL",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "licenses/native/WiX-5.0.2-LICENSE.txt",
+          "sha256": "dfdf2048787635215a6baf3b9d461dee89a2904d246787258a44f072a98d4786"
+        }
+      ],
+      "archive": {
+        "url": "https://api.nuget.org/v3-flatcontainer/wixtoolset.ui.wixext/5.0.2/wixtoolset.ui.wixext.5.0.2.nupkg",
+        "sha256": "5ef2c707614b9f70b6bbadd2d4abcb4124efee215e9b16bfbc80113079a604c7"
+      },
+      "compatibilityReview": "The MSI embeds unmodified dialog resources and native custom actions from the WiX UI extension as separate installer files; these do not link Oink GPL code. This is an aggregate distribution, not relicensing MS-RL code to GPL. Preserve MS-RL and attribution; provide the complete corresponding WiX source at the pinned upstream commit with release source materials, including any changes if modified. No global MS-RL allowance is granted to application dependencies."
+    },
+    {
+      "id": "native:libASPL@3.1.2+633e0f7",
+      "name": "libASPL",
+      "version": "3.1.2+633e0f7",
+      "ecosystem": "native",
+      "repository": "https://github.com/gavv/libASPL",
+      "source": {
+        "url": "https://github.com/gavv/libASPL/tree/633e0f70203edd87d320fc5a3cae901e1363aac5",
+        "integrity": "git:633e0f70203edd87d320fc5a3cae901e1363aac5"
+      },
+      "licenseExpression": "MIT AND AML",
+      "selectedLicense": "MIT AND AML",
+      "licenseFiles": [
+        {
+          "path": "apps/audio-plugin/licenses/LICENSE",
+          "sha256": "bdb64a0bea4af109148b48446a9026be5d1f22dc14d18920cfcd52bf3f3e2347"
+        },
+        {
+          "path": "apps/audio-plugin/licenses/LICENSE.apple2012",
+          "sha256": "9b2b45280cf33d7f726840a53283723c87b2295ff84d1cf3982c96b5bc4c50a9"
+        },
+        {
+          "path": "apps/audio-plugin/licenses/LICENSE.apple2020",
+          "sha256": "2b33b4cadf8e88c15e8808950913acf8bd84bac10d6312e9fb128163850d22d0"
+        }
+      ],
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "archive": {
+        "url": "https://codeload.github.com/gavv/libASPL/tar.gz/633e0f70203edd87d320fc5a3cae901e1363aac5",
+        "sha256": "8583fb549419eab14b5c636ee4eb1f0b1df74c534eaf2f990d8bb0fb5de6e01b"
+      },
+      "compatibilityReview": "Recovered pinned HAL dependency. MIT plus Apple sample-code AML grant redistribution with retained notices; retain all three upstream license texts in the driver and package. HAL component only."
+    },
+    {
+      "id": "native:VB-CABLE@45",
+      "name": "VB-CABLE",
+      "version": "45",
+      "ecosystem": "native",
+      "repository": "https://www.vb-cable.com/",
+      "source": {
+        "url": "https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip",
+        "integrity": "sha256:b950e39f01af1d04ea623c8f6d8eb9b6ea5c477c637295fabf20631c85116bfb"
+      },
+      "licenseExpression": "LicenseRef-VB-CABLE-Donationware",
+      "selectedLicense": "LicenseRef-VB-CABLE-Donationware",
+      "licenseFiles": [
+        {
+          "path": "licenses/native/VB-CABLE-Pack45-README.txt",
+          "sha256": "2515cfd667fffcf54d00e0dda70df58a2b8843ff2ae95e12455764da25cb9eb9"
+        },
+        {
+          "path": "licenses/native/VB-CABLE-distribution-notice.txt",
+          "sha256": "04082f47b0ed315a3b3721a967884c7123552ac3f860a9fb6692c7e2130bf86d"
+        }
+      ],
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "archive": {
+        "url": "https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip",
+        "sha256": "b950e39f01af1d04ea623c8f6d8eb9b6ea5c477c637295fabf20631c85116bfb"
+      },
+      "packagePatterns": [
+        "**/AudioPlugin/VBCABLE_Driver_Pack45.zip"
+      ],
+      "linkage": "Separate optional OS driver, unchanged archive; no code linked into Oink",
+      "compatibilityReview": "Standard package only, published vendor distribution permission; attribution and donation link shown before explicit installation. See distribution notice for professional-license conditions and older readme wording."
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset:oink-128x128.png@eda0a4a95f2d",
+      "name": "Oink 128x128.png",
+      "version": "eda0a4a95f2d04df738fc91225899f766783fce6e1678b996c5a915890a14437",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:eda0a4a95f2d04df738fc91225899f766783fce6e1678b996c5a915890a14437"
+      },
+      "path": "apps/oink/src-tauri/icons/128x128.png",
+      "sha256": "eda0a4a95f2d04df738fc91225899f766783fce6e1678b996c5a915890a14437",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-128x128@2x.png@ba7ddbb5b2eb",
+      "name": "Oink 128x128@2x.png",
+      "version": "ba7ddbb5b2ebc7aed37bc97d6d129198ab29d4137c96ab0b3c6b2cb456c09882",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:ba7ddbb5b2ebc7aed37bc97d6d129198ab29d4137c96ab0b3c6b2cb456c09882"
+      },
+      "path": "apps/oink/src-tauri/icons/128x128@2x.png",
+      "sha256": "ba7ddbb5b2ebc7aed37bc97d6d129198ab29d4137c96ab0b3c6b2cb456c09882",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-32x32.png@7cf66c32c73a",
+      "name": "Oink 32x32.png",
+      "version": "7cf66c32c73ad384449fd6339c3cb5f90b3ac5ff32fc790859a0c0696068ab4d",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:7cf66c32c73ad384449fd6339c3cb5f90b3ac5ff32fc790859a0c0696068ab4d"
+      },
+      "path": "apps/oink/src-tauri/icons/32x32.png",
+      "sha256": "7cf66c32c73ad384449fd6339c3cb5f90b3ac5ff32fc790859a0c0696068ab4d",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-icon.icns@5b1b0fe29814",
+      "name": "Oink icon.icns",
+      "version": "5b1b0fe298141ebffd5a3cce37579af29b73f70d383f24f702c6a4e8fb4e9789",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:5b1b0fe298141ebffd5a3cce37579af29b73f70d383f24f702c6a4e8fb4e9789"
+      },
+      "path": "apps/oink/src-tauri/icons/icon.icns",
+      "sha256": "5b1b0fe298141ebffd5a3cce37579af29b73f70d383f24f702c6a4e8fb4e9789",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-icon.ico@7c3e4114d20f",
+      "name": "Oink icon.ico",
+      "version": "7c3e4114d20fdd95d24ea4c4c8d0402e5aa8459687c8d6518d5faeeebe5e4e6c",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:7c3e4114d20fdd95d24ea4c4c8d0402e5aa8459687c8d6518d5faeeebe5e4e6c"
+      },
+      "path": "apps/oink/src-tauri/icons/icon.ico",
+      "sha256": "7c3e4114d20fdd95d24ea4c4c8d0402e5aa8459687c8d6518d5faeeebe5e4e6c",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-icon.png@277c823c8de1",
+      "name": "Oink icon.png",
+      "version": "277c823c8de14308948f1213d18daf8320e473a4b303a27a57b4683e75fa4d4f",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:277c823c8de14308948f1213d18daf8320e473a4b303a27a57b4683e75fa4d4f"
+      },
+      "path": "apps/oink/src-tauri/icons/icon.png",
+      "sha256": "277c823c8de14308948f1213d18daf8320e473a4b303a27a57b4683e75fa4d4f",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:dmg-background.png@4c1ee7028e46",
+      "name": "Oink installer dmg-background.png",
+      "version": "4c1ee7028e4678ccd5bd143ff3665253886799dce53b08e660b34b29cff9b6b0",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:4c1ee7028e4678ccd5bd143ff3665253886799dce53b08e660b34b29cff9b6b0"
+      },
+      "path": "packaging/macos/dmg-background.png",
+      "sha256": "4c1ee7028e4678ccd5bd143ff3665253886799dce53b08e660b34b29cff9b6b0",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:dmg-background.svg@3eb2447d07d7",
+      "name": "Oink installer dmg-background.svg",
+      "version": "3eb2447d07d770168515b706fb48ce829dbaa5fe1591f543001ce261c5fdcff7",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:3eb2447d07d770168515b706fb48ce829dbaa5fe1591f543001ce261c5fdcff7"
+      },
+      "path": "packaging/macos/dmg-background.svg",
+      "sha256": "3eb2447d07d770168515b706fb48ce829dbaa5fe1591f543001ce261c5fdcff7",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:installer-background.bmp@905cb8a436c0",
+      "name": "Oink installer installer-background.bmp",
+      "version": "905cb8a436c0c93a77ff7111ecb023fdbf72886dbdab50d4897faefd81225ddd",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:905cb8a436c0c93a77ff7111ecb023fdbf72886dbdab50d4897faefd81225ddd"
+      },
+      "path": "packaging/windows/installer-background.bmp",
+      "sha256": "905cb8a436c0c93a77ff7111ecb023fdbf72886dbdab50d4897faefd81225ddd",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:installer-background.svg@ebf10348c537",
+      "name": "Oink installer installer-background.svg",
+      "version": "ebf10348c5372535a3cf60974d28199a8477bee673cc6b6548c4fbda299fa001",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:ebf10348c5372535a3cf60974d28199a8477bee673cc6b6548c4fbda299fa001"
+      },
+      "path": "packaging/windows/installer-background.svg",
+      "sha256": "ebf10348c5372535a3cf60974d28199a8477bee673cc6b6548c4fbda299fa001",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:installer-banner.bmp@131214c60366",
+      "name": "Oink installer installer-banner.bmp",
+      "version": "131214c6036605d217f196a26afe858db3ca0032b1b9bf8d9a29c5887be7b03d",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:131214c6036605d217f196a26afe858db3ca0032b1b9bf8d9a29c5887be7b03d"
+      },
+      "path": "packaging/windows/installer-banner.bmp",
+      "sha256": "131214c6036605d217f196a26afe858db3ca0032b1b9bf8d9a29c5887be7b03d",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:installer-banner.svg@682e631d1cd8",
+      "name": "Oink installer installer-banner.svg",
+      "version": "682e631d1cd840d935980bd1de400f1147e5e1b4823e3cef6939ca35e0d14b90",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:682e631d1cd840d935980bd1de400f1147e5e1b4823e3cef6939ca35e0d14b90"
+      },
+      "path": "packaging/windows/installer-banner.svg",
+      "sha256": "682e631d1cd840d935980bd1de400f1147e5e1b4823e3cef6939ca35e0d14b90",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-appicon-macos.svg@9525b7b68a09",
+      "name": "Oink appicon-macos.svg",
+      "version": "9525b7b68a097d79e387ee75a2940b0620a6404e6394405b1bcbf798f6f971c3",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:9525b7b68a097d79e387ee75a2940b0620a6404e6394405b1bcbf798f6f971c3"
+      },
+      "path": "apps/oink/src-tauri/icons/appicon-macos.svg",
+      "sha256": "9525b7b68a097d79e387ee75a2940b0620a6404e6394405b1bcbf798f6f971c3",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-appicon-windows.svg@91200bbc33cd",
+      "name": "Oink appicon-windows.svg",
+      "version": "91200bbc33cd85eb6cd3b89dc5a9439ed996d653e226ad2a7c3e04d72a3d1a63",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:91200bbc33cd85eb6cd3b89dc5a9439ed996d653e226ad2a7c3e04d72a3d1a63"
+      },
+      "path": "apps/oink/src-tauri/icons/appicon-windows.svg",
+      "sha256": "91200bbc33cd85eb6cd3b89dc5a9439ed996d653e226ad2a7c3e04d72a3d1a63",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-wechat-qr.png@c119deadc667",
+      "name": "Oink sponsor QR code",
+      "version": "c119deadc667081a50a00158b1579e52ac6b707d8e5eaba0786ecd7f1cadb143",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:c119deadc667081a50a00158b1579e52ac6b707d8e5eaba0786ecd7f1cadb143"
+      },
+      "path": "apps/oink/src/sponsor/wechat-qr.png",
+      "sha256": "c119deadc667081a50a00158b1579e52ac6b707d8e5eaba0786ecd7f1cadb143",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-cursor-outline-16.png@997831dff66b",
+      "name": "Oink tray mac-cursor-outline-16.png",
+      "version": "997831dff66bc5f75d516ec0014c6aeaee18a15e6f969b45ac863950d26bc776",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:997831dff66bc5f75d516ec0014c6aeaee18a15e6f969b45ac863950d26bc776"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-cursor-outline-16.png",
+      "sha256": "997831dff66bc5f75d516ec0014c6aeaee18a15e6f969b45ac863950d26bc776",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-cursor-outline-32.png@9a87f232b6af",
+      "name": "Oink tray mac-cursor-outline-32.png",
+      "version": "9a87f232b6afae9fcd6e726d3911ce8c6b962ec914fd468d2587bfef2798c080",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:9a87f232b6afae9fcd6e726d3911ce8c6b962ec914fd468d2587bfef2798c080"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-cursor-outline-32.png",
+      "sha256": "9a87f232b6afae9fcd6e726d3911ce8c6b962ec914fd468d2587bfef2798c080",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-cursor-outline-48.png@b336bf962796",
+      "name": "Oink tray mac-cursor-outline-48.png",
+      "version": "b336bf9627961c3bf6a036f87dc63bf7fd59b0772504febe97ede78a668805d1",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:b336bf9627961c3bf6a036f87dc63bf7fd59b0772504febe97ede78a668805d1"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-cursor-outline-48.png",
+      "sha256": "b336bf9627961c3bf6a036f87dc63bf7fd59b0772504febe97ede78a668805d1",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-cursor-solid-16.png@4d37c3bdff1e",
+      "name": "Oink tray mac-cursor-solid-16.png",
+      "version": "4d37c3bdff1e02cdb9a836d5943f7a92a26bbcd072d5eb27417417f083794da6",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:4d37c3bdff1e02cdb9a836d5943f7a92a26bbcd072d5eb27417417f083794da6"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-cursor-solid-16.png",
+      "sha256": "4d37c3bdff1e02cdb9a836d5943f7a92a26bbcd072d5eb27417417f083794da6",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-cursor-solid-32.png@903f6ac663b4",
+      "name": "Oink tray mac-cursor-solid-32.png",
+      "version": "903f6ac663b4ba442d7bb43e56f2ee187b9897d7991d37a66a9d534123aad7f0",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:903f6ac663b4ba442d7bb43e56f2ee187b9897d7991d37a66a9d534123aad7f0"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-cursor-solid-32.png",
+      "sha256": "903f6ac663b4ba442d7bb43e56f2ee187b9897d7991d37a66a9d534123aad7f0",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-cursor-solid-48.png@0a14cd3b983b",
+      "name": "Oink tray mac-cursor-solid-48.png",
+      "version": "0a14cd3b983b4cc423501b48166f09b17701ada91aad6e4f73b43727bfc7b4b8",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:0a14cd3b983b4cc423501b48166f09b17701ada91aad6e4f73b43727bfc7b4b8"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-cursor-solid-48.png",
+      "sha256": "0a14cd3b983b4cc423501b48166f09b17701ada91aad6e4f73b43727bfc7b4b8",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-default-outline-16.png@997831dff66b",
+      "name": "Oink tray mac-default-outline-16.png",
+      "version": "997831dff66bc5f75d516ec0014c6aeaee18a15e6f969b45ac863950d26bc776",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:997831dff66bc5f75d516ec0014c6aeaee18a15e6f969b45ac863950d26bc776"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-default-outline-16.png",
+      "sha256": "997831dff66bc5f75d516ec0014c6aeaee18a15e6f969b45ac863950d26bc776",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-default-outline-32.png@9a87f232b6af",
+      "name": "Oink tray mac-default-outline-32.png",
+      "version": "9a87f232b6afae9fcd6e726d3911ce8c6b962ec914fd468d2587bfef2798c080",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:9a87f232b6afae9fcd6e726d3911ce8c6b962ec914fd468d2587bfef2798c080"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-default-outline-32.png",
+      "sha256": "9a87f232b6afae9fcd6e726d3911ce8c6b962ec914fd468d2587bfef2798c080",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-default-outline-48.png@b336bf962796",
+      "name": "Oink tray mac-default-outline-48.png",
+      "version": "b336bf9627961c3bf6a036f87dc63bf7fd59b0772504febe97ede78a668805d1",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:b336bf9627961c3bf6a036f87dc63bf7fd59b0772504febe97ede78a668805d1"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-default-outline-48.png",
+      "sha256": "b336bf9627961c3bf6a036f87dc63bf7fd59b0772504febe97ede78a668805d1",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-default-solid-16.png@4d37c3bdff1e",
+      "name": "Oink tray mac-default-solid-16.png",
+      "version": "4d37c3bdff1e02cdb9a836d5943f7a92a26bbcd072d5eb27417417f083794da6",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:4d37c3bdff1e02cdb9a836d5943f7a92a26bbcd072d5eb27417417f083794da6"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-default-solid-16.png",
+      "sha256": "4d37c3bdff1e02cdb9a836d5943f7a92a26bbcd072d5eb27417417f083794da6",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-default-solid-32.png@903f6ac663b4",
+      "name": "Oink tray mac-default-solid-32.png",
+      "version": "903f6ac663b4ba442d7bb43e56f2ee187b9897d7991d37a66a9d534123aad7f0",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:903f6ac663b4ba442d7bb43e56f2ee187b9897d7991d37a66a9d534123aad7f0"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-default-solid-32.png",
+      "sha256": "903f6ac663b4ba442d7bb43e56f2ee187b9897d7991d37a66a9d534123aad7f0",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-default-solid-48.png@0a14cd3b983b",
+      "name": "Oink tray mac-default-solid-48.png",
+      "version": "0a14cd3b983b4cc423501b48166f09b17701ada91aad6e4f73b43727bfc7b4b8",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:0a14cd3b983b4cc423501b48166f09b17701ada91aad6e4f73b43727bfc7b4b8"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-default-solid-48.png",
+      "sha256": "0a14cd3b983b4cc423501b48166f09b17701ada91aad6e4f73b43727bfc7b4b8",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-game-outline-16.png@694ca57d3394",
+      "name": "Oink tray mac-game-outline-16.png",
+      "version": "694ca57d33943389fa57ba47f949ef25ac258699341f3541a4982001b5cad7ac",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:694ca57d33943389fa57ba47f949ef25ac258699341f3541a4982001b5cad7ac"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-game-outline-16.png",
+      "sha256": "694ca57d33943389fa57ba47f949ef25ac258699341f3541a4982001b5cad7ac",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-game-outline-32.png@9192746a1880",
+      "name": "Oink tray mac-game-outline-32.png",
+      "version": "9192746a18808b2c014ec42e101d4671103fba8ae9d8f40a3b075f2e9a476ce1",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:9192746a18808b2c014ec42e101d4671103fba8ae9d8f40a3b075f2e9a476ce1"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-game-outline-32.png",
+      "sha256": "9192746a18808b2c014ec42e101d4671103fba8ae9d8f40a3b075f2e9a476ce1",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-game-outline-48.png@8987d596060b",
+      "name": "Oink tray mac-game-outline-48.png",
+      "version": "8987d596060bf4b3ed8ad5ca888e3fece5b68a92bc0df782686d2d518fb77792",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:8987d596060bf4b3ed8ad5ca888e3fece5b68a92bc0df782686d2d518fb77792"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-game-outline-48.png",
+      "sha256": "8987d596060bf4b3ed8ad5ca888e3fece5b68a92bc0df782686d2d518fb77792",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-game-solid-16.png@dae6c14c6e83",
+      "name": "Oink tray mac-game-solid-16.png",
+      "version": "dae6c14c6e83d9cce17c98707e96a982626aa7a390ece8c160f3afd7cf1333d2",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:dae6c14c6e83d9cce17c98707e96a982626aa7a390ece8c160f3afd7cf1333d2"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-game-solid-16.png",
+      "sha256": "dae6c14c6e83d9cce17c98707e96a982626aa7a390ece8c160f3afd7cf1333d2",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-game-solid-32.png@96e3c29d0eec",
+      "name": "Oink tray mac-game-solid-32.png",
+      "version": "96e3c29d0eece62202874d62fa83e7bd3795651d0a9e02b5dfd9853e6288465b",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:96e3c29d0eece62202874d62fa83e7bd3795651d0a9e02b5dfd9853e6288465b"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-game-solid-32.png",
+      "sha256": "96e3c29d0eece62202874d62fa83e7bd3795651d0a9e02b5dfd9853e6288465b",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-game-solid-48.png@bb80dc20455a",
+      "name": "Oink tray mac-game-solid-48.png",
+      "version": "bb80dc20455acdd7d020fa19c63feb94c3e010c05308089554e0d02bd10c157b",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:bb80dc20455acdd7d020fa19c63feb94c3e010c05308089554e0d02bd10c157b"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-game-solid-48.png",
+      "sha256": "bb80dc20455acdd7d020fa19c63feb94c3e010c05308089554e0d02bd10c157b",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-locked-outline-16.png@bbb79758b385",
+      "name": "Oink tray mac-locked-outline-16.png",
+      "version": "bbb79758b3854d4066e9beed2af7002a6a6cbf75c5b15ac0598fe0dcf129aa15",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:bbb79758b3854d4066e9beed2af7002a6a6cbf75c5b15ac0598fe0dcf129aa15"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-locked-outline-16.png",
+      "sha256": "bbb79758b3854d4066e9beed2af7002a6a6cbf75c5b15ac0598fe0dcf129aa15",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-locked-outline-32.png@4b902e85870f",
+      "name": "Oink tray mac-locked-outline-32.png",
+      "version": "4b902e85870f80a77da39c51b9e1b37a30548b2e2766d179a1ce47f9f4fa544b",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:4b902e85870f80a77da39c51b9e1b37a30548b2e2766d179a1ce47f9f4fa544b"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-locked-outline-32.png",
+      "sha256": "4b902e85870f80a77da39c51b9e1b37a30548b2e2766d179a1ce47f9f4fa544b",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-locked-outline-48.png@fefd06591e4a",
+      "name": "Oink tray mac-locked-outline-48.png",
+      "version": "fefd06591e4a6f390522d1df9998a7146239aa2b5acbae63a25758a35a58ced3",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:fefd06591e4a6f390522d1df9998a7146239aa2b5acbae63a25758a35a58ced3"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-locked-outline-48.png",
+      "sha256": "fefd06591e4a6f390522d1df9998a7146239aa2b5acbae63a25758a35a58ced3",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-locked-solid-16.png@be7b23e0edea",
+      "name": "Oink tray mac-locked-solid-16.png",
+      "version": "be7b23e0edea7acc97f98b6c3ad1b30b7f415a472a989a712ac79e263c762999",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:be7b23e0edea7acc97f98b6c3ad1b30b7f415a472a989a712ac79e263c762999"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-locked-solid-16.png",
+      "sha256": "be7b23e0edea7acc97f98b6c3ad1b30b7f415a472a989a712ac79e263c762999",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-locked-solid-32.png@20b62d8517e9",
+      "name": "Oink tray mac-locked-solid-32.png",
+      "version": "20b62d8517e9d3cd81b1fffde3b7809fb25cdd2f51789b4ca6a65a5b196ecd11",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:20b62d8517e9d3cd81b1fffde3b7809fb25cdd2f51789b4ca6a65a5b196ecd11"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-locked-solid-32.png",
+      "sha256": "20b62d8517e9d3cd81b1fffde3b7809fb25cdd2f51789b4ca6a65a5b196ecd11",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-locked-solid-48.png@2ba072b5c4ea",
+      "name": "Oink tray mac-locked-solid-48.png",
+      "version": "2ba072b5c4eaf3ca55fc9eaf0cb3adcbcaf007b2a3e65290aea9580bdb94ff34",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:2ba072b5c4eaf3ca55fc9eaf0cb3adcbcaf007b2a3e65290aea9580bdb94ff34"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-locked-solid-48.png",
+      "sha256": "2ba072b5c4eaf3ca55fc9eaf0cb3adcbcaf007b2a3e65290aea9580bdb94ff34",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-paused-outline-16.png@fb6a5c693407",
+      "name": "Oink tray mac-paused-outline-16.png",
+      "version": "fb6a5c69340737c3b78e58bf94eff36c79c7f627d9b78c1f8d323ddfb67a8903",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:fb6a5c69340737c3b78e58bf94eff36c79c7f627d9b78c1f8d323ddfb67a8903"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-paused-outline-16.png",
+      "sha256": "fb6a5c69340737c3b78e58bf94eff36c79c7f627d9b78c1f8d323ddfb67a8903",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-paused-outline-32.png@0347f363bf04",
+      "name": "Oink tray mac-paused-outline-32.png",
+      "version": "0347f363bf047848ac84684a3158c52e85f9e8b508e1aa6dfd02112366083dda",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:0347f363bf047848ac84684a3158c52e85f9e8b508e1aa6dfd02112366083dda"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-paused-outline-32.png",
+      "sha256": "0347f363bf047848ac84684a3158c52e85f9e8b508e1aa6dfd02112366083dda",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-paused-outline-48.png@6ad3e952a60c",
+      "name": "Oink tray mac-paused-outline-48.png",
+      "version": "6ad3e952a60cdc8133fa768774da27092d44f441edd52416bc19f7587556e569",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:6ad3e952a60cdc8133fa768774da27092d44f441edd52416bc19f7587556e569"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-paused-outline-48.png",
+      "sha256": "6ad3e952a60cdc8133fa768774da27092d44f441edd52416bc19f7587556e569",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-paused-solid-16.png@fb8aa71248c3",
+      "name": "Oink tray mac-paused-solid-16.png",
+      "version": "fb8aa71248c3a366e3255a3e142d9f49bfa5eebfa3272655e3429b530f271a8a",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:fb8aa71248c3a366e3255a3e142d9f49bfa5eebfa3272655e3429b530f271a8a"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-paused-solid-16.png",
+      "sha256": "fb8aa71248c3a366e3255a3e142d9f49bfa5eebfa3272655e3429b530f271a8a",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-paused-solid-32.png@4da15c455985",
+      "name": "Oink tray mac-paused-solid-32.png",
+      "version": "4da15c455985418843c3cc571056b931a2c8011fecf26cf8b3f716c387e9813e",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:4da15c455985418843c3cc571056b931a2c8011fecf26cf8b3f716c387e9813e"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-paused-solid-32.png",
+      "sha256": "4da15c455985418843c3cc571056b931a2c8011fecf26cf8b3f716c387e9813e",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-paused-solid-48.png@5d86311c11ab",
+      "name": "Oink tray mac-paused-solid-48.png",
+      "version": "5d86311c11ab42fa7e9efbd928810996c6837e86a7b6e2d0bb18cd35c38e4559",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:5d86311c11ab42fa7e9efbd928810996c6837e86a7b6e2d0bb18cd35c38e4559"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-paused-solid-48.png",
+      "sha256": "5d86311c11ab42fa7e9efbd928810996c6837e86a7b6e2d0bb18cd35c38e4559",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-screenOff-outline-16.png@b18de2889dd8",
+      "name": "Oink tray mac-screenOff-outline-16.png",
+      "version": "b18de2889dd87e4a0f774bdfc40d7832d0110b794be3514620e475f1209f5524",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:b18de2889dd87e4a0f774bdfc40d7832d0110b794be3514620e475f1209f5524"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-screenOff-outline-16.png",
+      "sha256": "b18de2889dd87e4a0f774bdfc40d7832d0110b794be3514620e475f1209f5524",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-screenOff-outline-32.png@f5e77716f89d",
+      "name": "Oink tray mac-screenOff-outline-32.png",
+      "version": "f5e77716f89d1d86ef6ef28c3f15654ef1e4306f6213a57d0aa8a4dac5baa7be",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:f5e77716f89d1d86ef6ef28c3f15654ef1e4306f6213a57d0aa8a4dac5baa7be"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-screenOff-outline-32.png",
+      "sha256": "f5e77716f89d1d86ef6ef28c3f15654ef1e4306f6213a57d0aa8a4dac5baa7be",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-screenOff-outline-48.png@bc935eedccbc",
+      "name": "Oink tray mac-screenOff-outline-48.png",
+      "version": "bc935eedccbc15c099cf9abeec2ed52937fdb427bf49dd9283e8722d187defac",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:bc935eedccbc15c099cf9abeec2ed52937fdb427bf49dd9283e8722d187defac"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-screenOff-outline-48.png",
+      "sha256": "bc935eedccbc15c099cf9abeec2ed52937fdb427bf49dd9283e8722d187defac",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-screenOff-solid-16.png@4924f88dd50c",
+      "name": "Oink tray mac-screenOff-solid-16.png",
+      "version": "4924f88dd50cb4fa8affce85d737c1d20e149c820633e058c15ce954d2a698eb",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:4924f88dd50cb4fa8affce85d737c1d20e149c820633e058c15ce954d2a698eb"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-screenOff-solid-16.png",
+      "sha256": "4924f88dd50cb4fa8affce85d737c1d20e149c820633e058c15ce954d2a698eb",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-screenOff-solid-32.png@fbfdef57b41c",
+      "name": "Oink tray mac-screenOff-solid-32.png",
+      "version": "fbfdef57b41c5130f0209827ea5e9a30e066a71dfb175a3b48b8cec06a9295cc",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:fbfdef57b41c5130f0209827ea5e9a30e066a71dfb175a3b48b8cec06a9295cc"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-screenOff-solid-32.png",
+      "sha256": "fbfdef57b41c5130f0209827ea5e9a30e066a71dfb175a3b48b8cec06a9295cc",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:oink-tray-mac-screenOff-solid-48.png@5c935a2cbb87",
+      "name": "Oink tray mac-screenOff-solid-48.png",
+      "version": "5c935a2cbb87eb33399823b3b4dab647e9e054d93cbfead729dfbf9b837742e8",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:5c935a2cbb87eb33399823b3b4dab647e9e054d93cbfead729dfbf9b837742e8"
+      },
+      "path": "crates/oink-agent/src/tray/images/mac-screenOff-solid-48.png",
+      "sha256": "5c935a2cbb87eb33399823b3b4dab647e9e054d93cbfead729dfbf9b837742e8",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party"
+    },
+    {
+      "id": "asset:lucide-fold-horizontal@1.31.0",
+      "name": "Lucide fold-horizontal icon (adapted)",
+      "version": "1.31.0",
+      "ecosystem": "asset",
+      "repository": "https://github.com/lucide-icons/lucide",
+      "source": {
+        "url": "https://github.com/lucide-icons/lucide/blob/main/icons/fold-horizontal.svg",
+        "integrity": "sha256:101126e8916881448e9720a1b7ff4467d16dbe9cd9d966009cd64319006225b1"
+      },
+      "path": "apps/oink/src/arrange/CompactIcon.tsx",
+      "sha256": "101126e8916881448e9720a1b7ff4467d16dbe9cd9d966009cd64319006225b1",
+      "licenseExpression": "ISC",
+      "selectedLicense": "ISC",
+      "modified": true,
+      "modificationNotice": "Scaled from the 24px grid to the 20px oink-ui icon grid with a 1.8 stroke; line ends snapped to the grid.",
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "licenses/native/Lucide-1.31.0-LICENSE.txt",
+          "sha256": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57"
+        }
+      ],
+      "copyright": [
+        "Copyright (c) 2026 Lucide Icons and Contributors"
+      ],
+      "ownership": "third-party"
+    },
+    {
+      "id": "asset:oink-menu-audio@99177878f30d",
+      "name": "Oink native menu audio icon",
+      "version": "99177878f30d7c0311d3c2540bef525ef96ab87b023b8c97e5a19cad9d5f3483",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/tree/10aebb9c815aa7425fb09a3924df55e52053e237/apps/oink/src",
+        "integrity": "sha256:99177878f30d7c0311d3c2540bef525ef96ab87b023b8c97e5a19cad9d5f3483"
+      },
+      "path": "apps/oink/src-tauri/icons/menu/audio.svg",
+      "sha256": "99177878f30d7c0311d3c2540bef525ef96ab87b023b8c97e5a19cad9d5f3483",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md."
+    },
+    {
+      "id": "asset:oink-menu-game@051580f22370",
+      "name": "Oink native menu game icon",
+      "version": "051580f2237066b681edd846a756d763a3e1ddc99219dafa6b22e83f27355ed5",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/tree/10aebb9c815aa7425fb09a3924df55e52053e237/apps/oink/src",
+        "integrity": "sha256:051580f2237066b681edd846a756d763a3e1ddc99219dafa6b22e83f27355ed5"
+      },
+      "path": "apps/oink/src-tauri/icons/menu/game.svg",
+      "sha256": "051580f2237066b681edd846a756d763a3e1ddc99219dafa6b22e83f27355ed5",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md."
+    },
+    {
+      "id": "asset:oink-menu-hide-screens@8a625a3301df",
+      "name": "Oink native menu hide-screens icon",
+      "version": "8a625a3301dfe580f5d77562bccf48f000796eb4e526bfaad60540636da23642",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/tree/10aebb9c815aa7425fb09a3924df55e52053e237/apps/oink/src",
+        "integrity": "sha256:8a625a3301dfe580f5d77562bccf48f000796eb4e526bfaad60540636da23642"
+      },
+      "path": "apps/oink/src-tauri/icons/menu/hide-screens.svg",
+      "sha256": "8a625a3301dfe580f5d77562bccf48f000796eb4e526bfaad60540636da23642",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md."
+    },
+    {
+      "id": "asset:oink-menu-keyboard@facd38692503",
+      "name": "Oink native menu keyboard icon",
+      "version": "facd3869250326dda9fd0866b943a9147cc316f0ad2caaadc5dae1d4c4678811",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/tree/10aebb9c815aa7425fb09a3924df55e52053e237/apps/oink/src",
+        "integrity": "sha256:facd3869250326dda9fd0866b943a9147cc316f0ad2caaadc5dae1d4c4678811"
+      },
+      "path": "apps/oink/src-tauri/icons/menu/keyboard.svg",
+      "sha256": "facd3869250326dda9fd0866b943a9147cc316f0ad2caaadc5dae1d4c4678811",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md."
+    },
+    {
+      "id": "asset:oink-menu-lock@940b680fec17",
+      "name": "Oink native menu lock icon",
+      "version": "940b680fec17050fce888882bf679fd16609dd02ef80b427646a59fb11d6cb80",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink-ui",
+      "source": {
+        "url": "https://registry.npmjs.org/oink-ui/-/oink-ui-1.0.5.tgz",
+        "integrity": "sha512-I7e1UtaBU3vsDJ0oZ6ofoCYyOaNc29NCSDWq7N9UY/vPvVg6irWpebB03b/7GbTiRKFq3YXq6Bbtwv2nKXD0/A=="
+      },
+      "path": "apps/oink/src-tauri/icons/menu/lock.svg",
+      "sha256": "940b680fec17050fce888882bf679fd16609dd02ef80b427646a59fb11d6cb80",
+      "licenseExpression": "MIT",
+      "selectedLicense": "MIT",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "licenses/native/oink-ui-1.0.5-LICENSE.txt",
+          "sha256": "8b61d0a08992a88429c51bd40e944339a96a55e9f33ad737ee5e06a0e1ca011d"
+        }
+      ],
+      "copyright": [
+        "Copyright (c) 2026 Hachiwii"
+      ],
+      "ownership": "third-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md.",
+      "modificationNotice": "Exported oink-ui 1.0.5 ICONS.lock through its Icon component; CSS presentation attributes inlined and SVG serialized for native rasterization. Geometry unchanged."
+    },
+    {
+      "id": "asset:oink-menu-mouse@8a2524ed479e",
+      "name": "Oink native menu mouse icon",
+      "version": "8a2524ed479ed033315bbbc19360736acd925181ab0744d5391e88d46636987f",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/tree/10aebb9c815aa7425fb09a3924df55e52053e237/apps/oink/src",
+        "integrity": "sha256:8a2524ed479ed033315bbbc19360736acd925181ab0744d5391e88d46636987f"
+      },
+      "path": "apps/oink/src-tauri/icons/menu/mouse.svg",
+      "sha256": "8a2524ed479ed033315bbbc19360736acd925181ab0744d5391e88d46636987f",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md."
+    },
+    {
+      "id": "asset:oink-menu-pause@2fe6c29ef7a4",
+      "name": "Oink native menu pause icon",
+      "version": "2fe6c29ef7a4abb9bb2f2761896cf487400d26b58ce784f61100d935f6b63966",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/tree/10aebb9c815aa7425fb09a3924df55e52053e237/apps/oink/src",
+        "integrity": "sha256:2fe6c29ef7a4abb9bb2f2761896cf487400d26b58ce784f61100d935f6b63966"
+      },
+      "path": "apps/oink/src-tauri/icons/menu/pause.svg",
+      "sha256": "2fe6c29ef7a4abb9bb2f2761896cf487400d26b58ce784f61100d935f6b63966",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md."
+    },
+    {
+      "id": "asset:oink-menu-quit@07af83c212b7",
+      "name": "Oink native menu quit icon",
+      "version": "07af83c212b7da8193b56a67633bc29cf1c621a8e1fb8d6bdd729f15183184a9",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/tree/10aebb9c815aa7425fb09a3924df55e52053e237/apps/oink/src",
+        "integrity": "sha256:07af83c212b7da8193b56a67633bc29cf1c621a8e1fb8d6bdd729f15183184a9"
+      },
+      "path": "apps/oink/src-tauri/icons/menu/quit.svg",
+      "sha256": "07af83c212b7da8193b56a67633bc29cf1c621a8e1fb8d6bdd729f15183184a9",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md."
+    },
+    {
+      "id": "asset:oink-menu-resume@c39b5f1f7fb9",
+      "name": "Oink native menu resume icon",
+      "version": "c39b5f1f7fb9d729ab02762cf4adbea6359684fab41ec009cc4f9fb6c7f6c4fe",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink-ui",
+      "source": {
+        "url": "https://registry.npmjs.org/oink-ui/-/oink-ui-1.0.5.tgz",
+        "integrity": "sha512-I7e1UtaBU3vsDJ0oZ6ofoCYyOaNc29NCSDWq7N9UY/vPvVg6irWpebB03b/7GbTiRKFq3YXq6Bbtwv2nKXD0/A=="
+      },
+      "path": "apps/oink/src-tauri/icons/menu/resume.svg",
+      "sha256": "c39b5f1f7fb9d729ab02762cf4adbea6359684fab41ec009cc4f9fb6c7f6c4fe",
+      "licenseExpression": "MIT",
+      "selectedLicense": "MIT",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "licenses/native/oink-ui-1.0.5-LICENSE.txt",
+          "sha256": "8b61d0a08992a88429c51bd40e944339a96a55e9f33ad737ee5e06a0e1ca011d"
+        }
+      ],
+      "copyright": [
+        "Copyright (c) 2026 Hachiwii"
+      ],
+      "ownership": "third-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md.",
+      "modificationNotice": "Exported oink-ui 1.0.5 ICONS.play through its Icon component; CSS presentation attributes inlined and SVG serialized for native rasterization. Geometry unchanged."
+    },
+    {
+      "id": "asset:oink-menu-show-screens@d080900f64d8",
+      "name": "Oink native menu show-screens icon",
+      "version": "d080900f64d875438afc4e738de8f1857cb9d68749b951028a7f67cb02a5fbe7",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink-ui",
+      "source": {
+        "url": "https://registry.npmjs.org/oink-ui/-/oink-ui-1.0.5.tgz",
+        "integrity": "sha512-I7e1UtaBU3vsDJ0oZ6ofoCYyOaNc29NCSDWq7N9UY/vPvVg6irWpebB03b/7GbTiRKFq3YXq6Bbtwv2nKXD0/A=="
+      },
+      "path": "apps/oink/src-tauri/icons/menu/show-screens.svg",
+      "sha256": "d080900f64d875438afc4e738de8f1857cb9d68749b951028a7f67cb02a5fbe7",
+      "licenseExpression": "MIT",
+      "selectedLicense": "MIT",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "licenses/native/oink-ui-1.0.5-LICENSE.txt",
+          "sha256": "8b61d0a08992a88429c51bd40e944339a96a55e9f33ad737ee5e06a0e1ca011d"
+        }
+      ],
+      "copyright": [
+        "Copyright (c) 2026 Hachiwii"
+      ],
+      "ownership": "third-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md.",
+      "modificationNotice": "Exported oink-ui 1.0.5 ICONS.eye through its Icon component; CSS presentation attributes inlined and SVG serialized for native rasterization. Geometry unchanged."
+    },
+    {
+      "id": "asset:oink-menu-show@0344769a2347",
+      "name": "Oink native menu show icon",
+      "version": "0344769a23479f5b51c324ed122ee41767ae17719bfee902926ad723e451a79d",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink-ui",
+      "source": {
+        "url": "https://registry.npmjs.org/oink-ui/-/oink-ui-1.0.5.tgz",
+        "integrity": "sha512-I7e1UtaBU3vsDJ0oZ6ofoCYyOaNc29NCSDWq7N9UY/vPvVg6irWpebB03b/7GbTiRKFq3YXq6Bbtwv2nKXD0/A=="
+      },
+      "path": "apps/oink/src-tauri/icons/menu/show.svg",
+      "sha256": "0344769a23479f5b51c324ed122ee41767ae17719bfee902926ad723e451a79d",
+      "licenseExpression": "MIT",
+      "selectedLicense": "MIT",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "licenses/native/oink-ui-1.0.5-LICENSE.txt",
+          "sha256": "8b61d0a08992a88429c51bd40e944339a96a55e9f33ad737ee5e06a0e1ca011d"
+        }
+      ],
+      "copyright": [
+        "Copyright (c) 2026 Hachiwii"
+      ],
+      "ownership": "third-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md.",
+      "modificationNotice": "Exported oink-ui 1.0.5 ICONS.external through its Icon component; CSS presentation attributes inlined and SVG serialized for native rasterization. Geometry unchanged."
+    },
+    {
+      "id": "asset:oink-menu-unlock@facc97809bbe",
+      "name": "Oink native menu unlock icon",
+      "version": "facc97809bbe9eb6b5168f6ca04aed3071b9ca5b3b9ac5479db79e6738c1b2c8",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/tree/10aebb9c815aa7425fb09a3924df55e52053e237/apps/oink/src",
+        "integrity": "sha256:facc97809bbe9eb6b5168f6ca04aed3071b9ca5b3b9ac5479db79e6738c1b2c8"
+      },
+      "path": "apps/oink/src-tauri/icons/menu/unlock.svg",
+      "sha256": "facc97809bbe9eb6b5168f6ca04aed3071b9ca5b3b9ac5479db79e6738c1b2c8",
+      "licenseExpression": "GPL-3.0-only AND MIT",
+      "selectedLicense": "GPL-3.0-only AND MIT",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        },
+        {
+          "path": "licenses/native/oink-ui-1.0.5-LICENSE.txt",
+          "sha256": "8b61d0a08992a88429c51bd40e944339a96a55e9f33ad737ee5e06a0e1ca011d"
+        }
+      ],
+      "copyright": [
+        "Copyright (c) 2026 Hachiwii"
+      ],
+      "ownership": "third-party",
+      "provenance": "Rendered snapshot; per-icon source review in apps/oink/src-tauri/icons/menu/README.md.",
+      "modificationNotice": "Oink DeviceMenu UnlockIcon retains the oink-ui lock body rectangle (x=4.5, y=9, width=11, height=7.5, rx=2) and replaces the shackle with the Oink open-lock path; Icon CSS presentation attributes inlined."
+    },
+    {
+      "id": "asset:oink-sponsor-kofi@5eb472fe3d35",
+      "name": "Oink sponsor Ko-fi mark",
+      "version": "5eb472fe3d358a6878546a11faa7af7cfa3a7b5cf1d2e1b951b657497fd278cc",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/blob/74004ec174219de1eb63f6707949c0c91b704f49/apps/oink/src/sponsor/Sponsor.tsx",
+        "integrity": "sha256:5eb472fe3d358a6878546a11faa7af7cfa3a7b5cf1d2e1b951b657497fd278cc"
+      },
+      "path": "apps/oink/src/sponsor/kofi.svg",
+      "sha256": "5eb472fe3d358a6878546a11faa7af7cfa3a7b5cf1d2e1b951b657497fd278cc",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Project-authored Ko-fi mark introduced in 74004ec174219de1eb63f6707949c0c91b704f49 as KofiMark. Exported with tile=true to a standalone SVG in 19f9f255163731c4148da5c9d2cdf94fd89d8836; geometry, colors and tile transform are unchanged, with JSX presentation attributes serialized as standard SVG attributes.",
+      "trademarkNotice": "Ko-fi names and brand identifiers remain the property of their respective owners. The project license covers this project-authored SVG implementation and grants no trademark rights or endorsement."
+    },
+    {
+      "id": "asset:oink-sponsor-wechat@3bf034edcb5f",
+      "name": "Oink sponsor WeChat Pay mark",
+      "version": "3bf034edcb5f857ab6fba9b0ccd549515ff6328f50eaba32260d7c3c57095ad1",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink/blob/74004ec174219de1eb63f6707949c0c91b704f49/apps/oink/src/sponsor/Sponsor.tsx",
+        "integrity": "sha256:3bf034edcb5f857ab6fba9b0ccd549515ff6328f50eaba32260d7c3c57095ad1"
+      },
+      "path": "apps/oink/src/sponsor/wechat.svg",
+      "sha256": "3bf034edcb5f857ab6fba9b0ccd549515ff6328f50eaba32260d7c3c57095ad1",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Project-authored WeChat Pay mark introduced in 74004ec174219de1eb63f6707949c0c91b704f49 as WeChatPayMark. Exported with tile=true to a standalone SVG in 19f9f255163731c4148da5c9d2cdf94fd89d8836; geometry, colors and tile transform are unchanged, with JSX presentation attributes serialized as standard SVG attributes.",
+      "trademarkNotice": "WeChat Pay names and brand identifiers remain the property of their respective owners. The project license covers this project-authored SVG implementation and grants no trademark rights or endorsement."
+    },
+    {
+      "id": "asset:oink-paste-menu-mark.svg@083518ebc616",
+      "name": "Oink Paste as File mark.svg",
+      "version": "083518ebc616896ef5fdeb1b35364d432290772f76e1756a3e6e20e04a0a202a",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:083518ebc616896ef5fdeb1b35364d432290772f76e1756a3e6e20e04a0a202a"
+      },
+      "path": "apps/finder-sync/Resources/mark.svg",
+      "sha256": "083518ebc616896ef5fdeb1b35364d432290772f76e1756a3e6e20e04a0a202a",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Copied from the VI b2 brand mark source used by the native menu icon generator."
+    },
+    {
+      "id": "asset:oink-paste-menu-mark-reversed.svg@073acecbc07d",
+      "name": "Oink Paste as File mark-reversed.svg",
+      "version": "073acecbc07d5c5a76583885c0347f1d28b1c7f9ff894ee40760423aa3a6933c",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:073acecbc07d5c5a76583885c0347f1d28b1c7f9ff894ee40760423aa3a6933c"
+      },
+      "path": "apps/finder-sync/Resources/mark-reversed.svg",
+      "sha256": "073acecbc07d5c5a76583885c0347f1d28b1c7f9ff894ee40760423aa3a6933c",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": false,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Copied from the VI b2 brand mark source used by the native menu icon generator."
+    },
+    {
+      "id": "asset:oink-paste-menu-OinkPasteMenu.png@c196a4444c98",
+      "name": "Oink Paste as File OinkPasteMenu.png",
+      "version": "c196a4444c985331d26be1e7b2798543af16eeb289f0d9601d932a05e7099e75",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:c196a4444c985331d26be1e7b2798543af16eeb289f0d9601d932a05e7099e75"
+      },
+      "path": "apps/finder-sync/Resources/OinkPasteMenu.png",
+      "sha256": "c196a4444c985331d26be1e7b2798543af16eeb289f0d9601d932a05e7099e75",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered by tools/generate-paste-menu-icons.py from the VI b2 mark SVG."
+    },
+    {
+      "id": "asset:oink-paste-menu-OinkPasteMenu@2x.png@5645c702c824",
+      "name": "Oink Paste as File OinkPasteMenu@2x.png",
+      "version": "5645c702c8240c231a365ede0104b2549ad8d9979a805baccdc019d702c37315",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:5645c702c8240c231a365ede0104b2549ad8d9979a805baccdc019d702c37315"
+      },
+      "path": "apps/finder-sync/Resources/OinkPasteMenu@2x.png",
+      "sha256": "5645c702c8240c231a365ede0104b2549ad8d9979a805baccdc019d702c37315",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered by tools/generate-paste-menu-icons.py from the VI b2 mark SVG."
+    },
+    {
+      "id": "asset:oink-paste-menu-OinkPasteMenuDark.png@3b5bc78187d9",
+      "name": "Oink Paste as File OinkPasteMenuDark.png",
+      "version": "3b5bc78187d9f595b52431d4403b4731683ce8bb6fe08135af7aaa88c4a73d0d",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:3b5bc78187d9f595b52431d4403b4731683ce8bb6fe08135af7aaa88c4a73d0d"
+      },
+      "path": "apps/finder-sync/Resources/OinkPasteMenuDark.png",
+      "sha256": "3b5bc78187d9f595b52431d4403b4731683ce8bb6fe08135af7aaa88c4a73d0d",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered by tools/generate-paste-menu-icons.py from the VI b2 mark SVG."
+    },
+    {
+      "id": "asset:oink-paste-menu-OinkPasteMenuDark@2x.png@8957e494306c",
+      "name": "Oink Paste as File OinkPasteMenuDark@2x.png",
+      "version": "8957e494306c37df27dba812625e57a551d8c88188e7c88ee3b31fcb4c299d1d",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:8957e494306c37df27dba812625e57a551d8c88188e7c88ee3b31fcb4c299d1d"
+      },
+      "path": "apps/finder-sync/Resources/OinkPasteMenuDark@2x.png",
+      "sha256": "8957e494306c37df27dba812625e57a551d8c88188e7c88ee3b31fcb4c299d1d",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered by tools/generate-paste-menu-icons.py from the VI b2 mark SVG."
+    },
+    {
+      "id": "asset:oink-paste-menu-OinkPasteMenu.ico@a2ae03e04626",
+      "name": "Oink Paste as File OinkPasteMenu.ico",
+      "version": "a2ae03e04626499ebfded131953234e7a3891a292bb1d7d40f0c45aac66c483c",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:a2ae03e04626499ebfded131953234e7a3891a292bb1d7d40f0c45aac66c483c"
+      },
+      "path": "packaging/windows/OinkPasteMenu.ico",
+      "sha256": "a2ae03e04626499ebfded131953234e7a3891a292bb1d7d40f0c45aac66c483c",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered by tools/generate-paste-menu-icons.py from the VI b2 mark SVG."
+    },
+    {
+      "id": "asset:oink-paste-menu-OinkPasteMenuDark.ico@fc38e0387eea",
+      "name": "Oink Paste as File OinkPasteMenuDark.ico",
+      "version": "fc38e0387eea815c26da514a0e6165ce70e8d8454c30c772bbfba12beac99982",
+      "ecosystem": "asset",
+      "repository": "https://github.com/oinkvm/oink",
+      "source": {
+        "url": "https://github.com/oinkvm/oink",
+        "integrity": "sha256:fc38e0387eea815c26da514a0e6165ce70e8d8454c30c772bbfba12beac99982"
+      },
+      "path": "packaging/windows/OinkPasteMenuDark.ico",
+      "sha256": "fc38e0387eea815c26da514a0e6165ce70e8d8454c30c772bbfba12beac99982",
+      "licenseExpression": "GPL-3.0-only",
+      "selectedLicense": "GPL-3.0-only",
+      "modified": true,
+      "scope": [
+        "runtime"
+      ],
+      "platforms": [
+        "macos-arm64",
+        "macos-x64",
+        "windows-x64"
+      ],
+      "licenseFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "LICENSE-ADDITIONAL-TERMS.md",
+          "sha256": "c69f265a607a09f13de139896a182f61fae5c650d6d45269313297c07606286e"
+        }
+      ],
+      "copyright": [],
+      "ownership": "first-party",
+      "provenance": "Rendered by tools/generate-paste-menu-icons.py from the VI b2 mark SVG."
+    }
+  ],
+  "systemComponents": [
+    {
+      "name": "WebView2 Runtime",
+      "platform": "windows-x64",
+      "distribution": "OS/externally installed prerequisite; not bundled by Oink"
+    },
+    {
+      "name": "macOS system frameworks and fonts",
+      "platform": "macos-arm64",
+      "distribution": "OS-provided; not redistributed as Oink assets"
+    }
+  ],
+  "buildTools": [
+    {
+      "name": "WiX Toolset",
+      "version": "5.0.2",
+      "source": "https://api.nuget.org/v3-flatcontainer/wix/5.0.2/wix.5.0.2.nupkg",
+      "sha256": "f30ef0c74e2a986126539c5780be93ac24e8136eaf723b1937b26272703ae173",
+      "distribution": "Build tool; CLI not redistributed in the Oink runtime. Installer engine/custom-action resources require final MSI contents review."
+    },
+    {
+      "name": "WixToolset.Firewall.wixext",
+      "version": "5.0.2",
+      "source": "https://api.nuget.org/v3-flatcontainer/wixtoolset.firewall.wixext/5.0.2/wixtoolset.firewall.wixext.5.0.2.nupkg",
+      "sha256": "c9a1c99afab82225127b34036b719dea6c98c451e21b341ae1c62a674d0ba5ef",
+      "distribution": "Build input; embedded firewall custom actions require final MSI resources review and retained upstream license."
+    }
+  ],
+  "assetPolicy": "No third-party font files are currently checked into the product sources. npm icon/asset libraries are recorded by the npm inventory. Standalone fonts/icons/images require a pinned assets entry with licenseFiles and sha256 before packaging. Oink artwork is classified as first-party, covered by the project GPL-3.0-only license, and excluded from third-party components."
+}
