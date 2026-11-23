@@ -3908,14 +3908,15 @@ mod tests {
         let _serial = SERIAL.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
         let (service, receiver) = fake(temp.path().join("CloudFiles"));
+        let chunk = 1024 * 1024;
         let source = Arc::new(Versioned {
-            size: 65537,
+            size: (chunk + 1) as u64,
             missing: false,
             fail_eof: true,
             selected: AtomicU64::new(0),
         });
         let delivery = service
-            .publish(vec![entry("file", 65537, false)], source.clone(), Instant::now())
+            .publish(vec![entry("file", (chunk + 1) as u64, false)], source.clone(), Instant::now())
             .unwrap();
         request(&service, &delivery, &receiver, 0, false);
         assert_eq!(source.selected.load(Ordering::Relaxed), 7);
@@ -3926,7 +3927,7 @@ mod tests {
                 .filter(|(_, _, status)| *status == 0)
                 .map(|(_, bytes, _)| bytes.len())
                 .sum::<usize>(),
-            65536
+            chunk
         );
         assert_eq!(transfers.last().unwrap().2, STATUS_CLOUD_FILE_NOT_IN_SYNC);
     }
@@ -4580,10 +4581,12 @@ mod tests {
         let _serial = SERIAL.lock().unwrap();
         let temp = tempfile::tempdir().unwrap();
         let (service, receiver) = fake(temp.path().join("CloudFiles"));
-        let bytes = Bytes::new(131073);
+        let chunk = 1024 * 1024;
+        let size = 2 * chunk + 1;
+        let bytes = Bytes::new(size);
         let delivery = service
             .publish(
-                vec![entry("folder/child", 131073, false), entry("folder", 0, true)],
+                vec![entry("folder/child", size as u64, false), entry("folder", 0, true)],
                 bytes.clone(),
                 Instant::now(),
             )
@@ -4591,7 +4594,7 @@ mod tests {
         assert_eq!(bytes.opens.load(Ordering::Relaxed), 0);
         assert_eq!(
             std::fs::metadata(delivery.path.join("folder/child")).unwrap().len(),
-            131073
+            size as u64
         );
         notify(&service, 0, true, false);
         request(&service, &delivery, &receiver, 0, false);
@@ -4606,7 +4609,7 @@ mod tests {
         );
         assert_eq!(
             transfers.iter().map(|(at, _, _)| *at).collect::<Vec<_>>(),
-            [0, 65536, 131072]
+            [0, chunk as i64, (2 * chunk) as i64]
         );
         assert!(transfers.iter().all(|(_, _, status)| *status == 0));
         drop(transfers);
