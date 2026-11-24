@@ -260,10 +260,31 @@ async fn open_diagnostics_folder(window: tauri::WebviewWindow, state: State<'_, 
         })
 }
 
+#[cfg(target_os = "macos")]
+fn macos_enclosing_backend() -> Option<std::path::PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    let helpers = exe.ancestors().nth(4)?;
+    if helpers.file_name()? != "Helpers" {
+        return None;
+    }
+    let contents = helpers.parent()?;
+    if contents.file_name()? != "Contents" {
+        return None;
+    }
+    let outer = contents.parent()?;
+    if outer.extension()? != "app" {
+        return None;
+    }
+    let backend = contents
+        .join("MacOS")
+        .join(oink_agent::backend::MAC_BACKEND_EXECUTABLE);
+    backend.is_file().then_some(backend)
+}
+
 pub fn run() {
     oink_agent::logs::init_ui();
     tracing::info!(pid = std::process::id(), "UI process starting");
-    let ui_lock;
+    let mut ui_lock;
     let remote_api;
     let api: Option<Arc<dyn AgentApi>> = {
         let data_dir = oink_foundation::paths::data_dir();
@@ -298,6 +319,24 @@ pub fn run() {
         #[cfg(not(windows))]
         {
             if let Err(error) = crate::service::check_backend_ownership(&data_dir) {
+                #[cfg(target_os = "macos")]
+                if error == "backend_unavailable"
+                    && std::env::var_os("OINK_HOME").is_none()
+                    && let Some(backend) = macos_enclosing_backend()
+                {
+                    drop(ui_lock.take());
+                    match oink_agent::backend::launch::reopen_entry(&backend, &data_dir) {
+                        Ok(()) => tracing::info!(
+                            backend = %backend.display(),
+                            "launched enclosing macOS backend from UI helper"
+                        ),
+                        Err(launch_error) => tracing::error!(
+                            %launch_error,
+                            "failed to launch enclosing macOS backend"
+                        ),
+                    }
+                    return;
+                }
                 tracing::error!(%error, "backend process ownership unavailable");
                 return;
             }

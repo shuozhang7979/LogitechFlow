@@ -202,7 +202,7 @@ mod tests {
     fn sources_are_ordered_https_origins() {
         assert_eq!(
             configured_sources(CONFIG).unwrap()[0],
-            "https://updates.oink.hachiwii.com"
+            "https://github.com/shuozhang7979/LogitechFlow/releases/latest/download"
         );
         let mut config: serde_json::Value = serde_json::from_slice(CONFIG).unwrap();
         for bad in [

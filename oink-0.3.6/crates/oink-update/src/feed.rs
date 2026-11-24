@@ -38,10 +38,9 @@ impl Channel {
 }
 
 pub fn manifest_url() -> String {
-    format!(
-        "{}/windows/v1/{}/stable/manifest.json",
+    crate::fetch::catalog_url(
         feed_origin(),
-        crate::WINDOWS_EPOCH
+        &format!("windows/v1/{}/stable/manifest.json", crate::WINDOWS_EPOCH),
     )
 }
 pub(crate) fn feed_origin() -> &'static str {
@@ -51,7 +50,7 @@ pub(crate) fn feed_origin() -> &'static str {
     }
     #[cfg(not(feature = "test-feed"))]
     {
-        "https://updates.oink.hachiwii.com"
+        "https://github.com/shuozhang7979/LogitechFlow/releases/latest/download"
     }
 }
 
@@ -330,7 +329,7 @@ pub(crate) fn freshness(
 ) -> Result<(Watermark, i64), Error> {
     let generated = timestamp(generated_at)?;
     let expires = timestamp(expires_at)?;
-    if expires <= generated || expires - generated > 30 * 86400 {
+    if expires <= generated || expires - generated > 10 * 365 * 86400 {
         return Err(Error::Metadata);
     }
     if now < generated - 300 || now < seen.last_verified_unix - 300 {

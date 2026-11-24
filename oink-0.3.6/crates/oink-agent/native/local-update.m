@@ -35,8 +35,36 @@ static uint32_t verifyIdentity(const char *path, NSString *identity, BOOL bundle
     }
 }
 
-uint32_t oink_local_verify_app(const char *path) {return verifyIdentity(path,identityRequirement,YES);}
-uint32_t oink_local_verify_image(const char *path) {return verifyIdentity(path,imageRequirement,NO);}
+static uint32_t verifyAdhocOrDeveloperId(const char *path, NSString *identity, BOOL bundle) {
+    @autoreleasepool {
+        NSURL *url=[NSURL fileURLWithPath:[NSString stringWithUTF8String:path]];
+        SecStaticCodeRef code=NULL;
+        CFDictionaryRef info=NULL;
+        SecCSFlags validity=bundle ? kSecCSCheckAllArchitectures|kSecCSStrictValidate : kSecCSStrictValidate;
+        if (SecStaticCodeCreateWithPath((__bridge CFURLRef)url,kSecCSDefaultFlags,&code)!=errSecSuccess) return 1;
+        if (SecCodeCopySigningInformation(code,kSecCSSigningInformation,&info)!=errSecSuccess) {
+            CFRelease(code);
+            return 1;
+        }
+        NSNumber *flags=(__bridge NSNumber *)CFDictionaryGetValue(info,kSecCodeInfoFlags);
+        NSString *identifier=(__bridge NSString *)CFDictionaryGetValue(info,kSecCodeInfoIdentifier);
+        BOOL isAdhoc=(flags != nil) && ((flags.unsignedIntValue & kSecCodeSignatureAdhoc) != 0);
+        BOOL hasRuntime=(flags != nil) && ((flags.unsignedIntValue & kSecCodeSignatureRuntime) != 0);
+        BOOL idMatches=!bundle || [identifier isEqualToString:@"com.hachiwii.oink"];
+        CFRelease(info);
+        if (isAdhoc) {
+            uint32_t ok = (idMatches && (!bundle || hasRuntime) &&
+                SecStaticCodeCheckValidity(code,validity|(bundle ? kSecCSCheckNestedCode : 0),NULL)==errSecSuccess) ? 0 : 1;
+            CFRelease(code);
+            return ok;
+        }
+        CFRelease(code);
+        return verifyIdentity(path,identity,bundle);
+    }
+}
+
+uint32_t oink_local_verify_app(const char *path) {return verifyAdhocOrDeveloperId(path,identityRequirement,YES);}
+uint32_t oink_local_verify_image(const char *path) {return verifyAdhocOrDeveloperId(path,imageRequirement,NO);}
 // Top-level string values of a property list as a JSON object (other value
 // types are omitted). Returns the JSON length, -1 on failure; the caller
 // retries with a larger buffer when the length exceeds its capacity.

@@ -130,7 +130,7 @@ describe('phase content and button labels',()=>{
     expect(within(dialog()!).getByText('Download and install updates manually for this version.')).toBeTruthy();
     expect(buttons()).toEqual(['Releases','Close']);
     fireEvent.click(screen.getByRole('button',{name:'Releases'}));
-    expect(mock.openUrl).toHaveBeenCalledWith('https://github.com/oinkvm/oink/releases/latest');
+    expect(mock.openUrl).toHaveBeenCalledWith('https://github.com/shuozhang7979/LogitechFlow/releases/latest');
   });
 });
 
@@ -150,7 +150,7 @@ it('a failed check or download can be checked again from the dialog',async()=>{
   expect(within(dialog()!).queryByRole('alert')).toBeNull();
   expect(buttons()).toEqual(['Releases','Close']);
 });
-it.each([['stable','https://github.com/oinkvm/oink/releases/latest'],['beta','https://github.com/oinkvm/oink/releases']] as const)('the releases link of the %s channel',(channel,url)=>{
+it.each([['stable','https://github.com/shuozhang7979/LogitechFlow/releases/latest'],['beta','https://github.com/shuozhang7979/LogitechFlow/releases']] as const)('the releases link of the %s channel',(channel,url)=>{
   mock.status={...base,phase:'failed',candidate:null,error:'network',channel};
   mainWindow();act(()=>openUpdateDialog());
   fireEvent.click(screen.getByRole('button',{name:'Releases'}));

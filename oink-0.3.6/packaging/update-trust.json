@@ -1,13 +1,14 @@
 {
   "schema": 1,
-  "repository": "oinkvm/oink",
+  "repository": "shuozhang7979/LogitechFlow",
   "sources": [
-    "https://updates.oink.hachiwii.com"
+    "https://github.com/shuozhang7979/LogitechFlow/releases/latest/download",
+    "https://raw.githubusercontent.com/shuozhang7979/LogitechFlow/built-installers/feed"
   ],
   "windows": [
     {
       "epoch": "win-2026-01",
-      "public_key": "YMu4ZndkqkSwWzHCCKitKlhTqTn5R8l5puVV5w/on6k=",
+      "public_key": "ZO0f983734PODm96fSSL7vcOb4tdi6P5ysJBCgy6Mdg=",
       "authenticode_spki_sha256": [],
       "channels": [
         "stable",
@@ -18,7 +19,7 @@
   ],
   "mac": {
     "epoch": "mac-2026-01",
-    "public_key": "GXJBpXvKswn0U4qeJvB67mDku0zedc4BSW3HyClk9ZA=",
+    "public_key": "ZO0f983734PODm96fSSL7vcOb4tdi6P5ysJBCgy6Mdg=",
     "sparkle_version": "2.9.6",
     "sparkle_archive_sha256": "52bf9e88cdd972fc0c81501377a880e90d47031bd8ca5462488f843e2609e192",
     "enabled": true

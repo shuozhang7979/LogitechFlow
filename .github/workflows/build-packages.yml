@@ -87,13 +87,15 @@ jobs:
           npm run -w apps/oink typecheck
           npm run -w apps/oink test -- --run
           python packaging/macos/check.py --test
-          cargo test -p oink-protocol -p oink-network -p oink-locator -p oink-clipboard -p oink-agent --lib
+          cargo test -p oink-protocol -p oink-network -p oink-locator -p oink-clipboard -p oink-update -p oink-agent --lib
       - name: Build ad-hoc signed macOS DMG & ZIP
         run: |
-          python build-support/package.py --public-version --platform macos --arch arm64 --adhoc --sequence 2 --output-root "$RUNNER_TEMP/packages" --tool-cache "$RUNNER_TEMP/package-tools"
+          SEQ=$(( GITHUB_RUN_NUMBER + 2 ))
+          python build-support/package.py --public-version --platform macos --arch arm64 --adhoc --sequence "$SEQ" --output-root "$RUNNER_TEMP/packages" --tool-cache "$RUNNER_TEMP/package-tools"
           mkdir -p "$RUNNER_TEMP/dist-macos"
           cp "$RUNNER_TEMP"/packages/*/macos-arm64/Oink-*.dmg "$RUNNER_TEMP/dist-macos/"
           cp "$RUNNER_TEMP"/packages/*/macos-arm64/Oink-*.zip "$RUNNER_TEMP/dist-macos/"
+          cp "$RUNNER_TEMP"/packages/*/macos-arm64/release.json "$RUNNER_TEMP/dist-macos/release-macos.json"
           cp "$RUNNER_TEMP"/packages/*/macos-arm64/SHA256SUMS "$RUNNER_TEMP/dist-macos/SHA256SUMS-macos.txt"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -145,14 +147,15 @@ jobs:
       - name: Verify core Rust tests on Windows
         shell: cmd
         run: |
-          cargo test -p oink-protocol -p oink-network -p oink-clipboard --lib -- --skip native_missing_and_closed_protected_opens_have_a_quick_leak_regression_check || exit /b 1
+          cargo test -p oink-protocol -p oink-network -p oink-clipboard -p oink-update --lib -- --skip native_missing_and_closed_protected_opens_have_a_quick_leak_regression_check || exit /b 1
       - name: Build Windows x64 MSI Installer
         shell: cmd
         run: |
+          set /a SEQ=%GITHUB_RUN_NUMBER%+2
           for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALL=%%i"
           call "%VSINSTALL%\Common7\Tools\VsDevCmd.bat" -arch=x64 || exit /b 1
-          python build-support/package.py --public-version --platform windows --sequence 2 --output-root "%RUNNER_TEMP%\packages" --tool-cache "%RUNNER_TEMP%\package-tools" || exit /b 1
-          powershell.exe -NoLogo -NoProfile -Command "$ErrorActionPreference='Stop'; New-Item -ItemType Directory -Force \"$env:RUNNER_TEMP/dist-windows\" | Out-Null; Copy-Item \"$env:RUNNER_TEMP/packages/*/windows-x64/Oink-*.msi\" \"$env:RUNNER_TEMP/dist-windows/\" -Force; Copy-Item \"$env:RUNNER_TEMP/packages/*/windows-x64/SHA256SUMS\" \"$env:RUNNER_TEMP/dist-windows/SHA256SUMS-windows.txt\" -Force" || exit /b 1
+          python build-support/package.py --public-version --platform windows --sequence %SEQ% --output-root "%RUNNER_TEMP%\packages" --tool-cache "%RUNNER_TEMP%\package-tools" || exit /b 1
+          powershell.exe -NoLogo -NoProfile -Command "$ErrorActionPreference='Stop'; New-Item -ItemType Directory -Force \"$env:RUNNER_TEMP/dist-windows\" | Out-Null; Copy-Item \"$env:RUNNER_TEMP/packages/*/windows-x64/Oink-*.msi\" \"$env:RUNNER_TEMP/dist-windows/\" -Force; Copy-Item \"$env:RUNNER_TEMP/packages/*/windows-x64/release.json\" \"$env:RUNNER_TEMP/dist-windows/release-windows.json\" -Force; Copy-Item \"$env:RUNNER_TEMP/packages/*/windows-x64/SHA256SUMS\" \"$env:RUNNER_TEMP/dist-windows/SHA256SUMS-windows.txt\" -Force" || exit /b 1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: oink-windows-x64
@@ -169,16 +172,38 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: ${{ runner.temp }}/artifacts
-      - name: Assemble all-in-one Mac & Windows install kits
+      - name: Assemble all-in-one Mac & Windows install kits and signed update feed
+        env:
+          OINK_UPDATE_SIGNING_SEED_HEX: ${{ secrets.OINK_UPDATE_SIGNING_SEED_HEX }}
         run: |
           set -euo pipefail
+          SEQ=$(( GITHUB_RUN_NUMBER + 2 ))
+          TAG="v0.3.6-b${SEQ}"
+          echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "RELEASE_SEQ=${SEQ}" >> "$GITHUB_ENV"
+
           OUT="$RUNNER_TEMP/release-assets"
-          mkdir -p "$OUT" "$RUNNER_TEMP/kit-mac" "$RUNNER_TEMP/kit-win"
+          FEED_TREE="$RUNNER_TEMP/feed-tree"
+          mkdir -p "$OUT" "$FEED_TREE" "$RUNNER_TEMP/kit-mac" "$RUNNER_TEMP/kit-win"
 
           cp "$RUNNER_TEMP"/artifacts/oink-macos-arm64/Oink-*.dmg "$OUT/"
           cp "$RUNNER_TEMP"/artifacts/oink-macos-arm64/Oink-*.zip "$OUT/"
           cp "$RUNNER_TEMP"/artifacts/oink-windows-x64/Oink-*.msi "$OUT/"
           cp "$RUNNER_TEMP"/artifacts/deskspan-binaries/* "$OUT/"
+
+          MAC_DMG=$(ls "$OUT"/Oink-*-macos-arm64.dmg | head -n 1)
+          WIN_MSI=$(ls "$OUT"/Oink-*-windows-x64.msi | head -n 1)
+
+          python3 tools/generate_update_feed.py --self-test
+          python3 tools/generate_update_feed.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --tag "$TAG" \
+            --mac-dmg "$MAC_DMG" \
+            --mac-record "$RUNNER_TEMP/artifacts/oink-macos-arm64/release-macos.json" \
+            --win-msi "$WIN_MSI" \
+            --win-record "$RUNNER_TEMP/artifacts/oink-windows-x64/release-windows.json" \
+            --flat-output "$OUT" \
+            --tree-output "$FEED_TREE"
 
           # All-in-one macOS arm64 kit
           cp "$RUNNER_TEMP"/artifacts/deskspan-binaries/deskspan-macos-arm64 "$RUNNER_TEMP/kit-mac/deskspan"
@@ -192,8 +217,13 @@ jobs:
           MOUNT=$(mktemp -d /tmp/oink-mnt.XXXXXX)
           trap 'hdiutil detach "$MOUNT" -quiet || true; rmdir "$MOUNT" || true' EXIT
           hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MOUNT"
-          pkill -x Oink 2>/dev/null || true
-          pkill -f OinkBackend 2>/dev/null || true
+          for proc in oink oink-backend oink-agent oink-file-provider OinkFileProvider OinkFinderSync OinkPaste; do
+            pkill -x "$proc" 2>/dev/null || true
+          done
+          for _ in 1 2 3 4 5 6 7 8 9 10; do
+            pgrep -x oink-backend >/dev/null 2>&1 || break
+            sleep 0.3
+          done
           rm -rf /Applications/Oink.app
           ditto "$MOUNT/Oink.app" /Applications/Oink.app
           xattr -cr /Applications/Oink.app
@@ -225,27 +255,36 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="v0.3.6-flow"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$RUNNER_TEMP/release-assets/"* --clobber
-          else
-            gh release create "$TAG" "$RUNNER_TEMP/release-assets/"* \
-              --title "LogitechFlow (Oink 0.3.6 + Real-Time Transfer Monitor & High-Speed Pipeline)" \
-              --notes "Includes custom-built Oink 0.3.6 (4 MiB blocks, single-stream Select+Read, parallel CloudFiles hydration, real-time HUD & UI transfer monitor) + DeskSpan CLI for macOS arm64 and Windows x64."
+          # Keep v0.3.6-flow updated for existing bookmarks (not marked latest)
+          if gh release view "v0.3.6-flow" >/dev/null 2>&1; then
+            gh release upload "v0.3.6-flow" "$RUNNER_TEMP/release-assets/"* --clobber
           fi
 
-          # Also publish a clean 1-commit `built-installers` branch for direct Git sync on Mac & Windows
+          # Publish immutable versioned release marked --latest for in-app auto-updater
+          TAG="$RELEASE_TAG"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$RUNNER_TEMP/release-assets/"* --clobber
+            gh release edit "$TAG" --latest=true
+          else
+            gh release create "$TAG" "$RUNNER_TEMP/release-assets/"* \
+              --latest \
+              --title "LogitechFlow 0.3.6 (Build $(( 306000 + RELEASE_SEQ )))" \
+              --notes "Includes custom-built Oink 0.3.6 (GitHub Releases in-app auto-updater, macOS Dock launch fix, 4 MiB streaming pipeline, real-time HUD & UI transfer monitor) + DeskSpan CLI for macOS arm64 and Windows x64."
+          fi
+
+          # Also publish a clean 1-commit `built-installers` branch (including `feed/`)
           BRANCH_DIR="$RUNNER_TEMP/built-branch"
-          mkdir -p "$BRANCH_DIR/macos-arm64" "$BRANCH_DIR/windows-x64"
+          mkdir -p "$BRANCH_DIR/macos-arm64" "$BRANCH_DIR/windows-x64" "$BRANCH_DIR/feed"
           cp -R "$RUNNER_TEMP/kit-mac/"* "$BRANCH_DIR/macos-arm64/"
           cp -R "$RUNNER_TEMP/kit-win/"* "$BRANCH_DIR/windows-x64/"
-          (cd "$BRANCH_DIR" && sha256sum macos-arm64/* windows-x64/* > SHA256SUMS)
+          cp -R "$RUNNER_TEMP/feed-tree/." "$BRANCH_DIR/feed/"
+          (cd "$BRANCH_DIR" && find macos-arm64 windows-x64 feed -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
           (
             cd "$BRANCH_DIR"
             git init -b built-installers
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add -A
-            git commit -m "chore(release): publish built macOS & Windows installers (${GITHUB_SHA::7})"
+            git commit -m "chore(release): publish built installers & signed update feed (${TAG}, ${GITHUB_SHA::7})"
             git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" built-installers:built-installers
           )

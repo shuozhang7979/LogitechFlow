@@ -2,6 +2,16 @@
 //! the Windows service and the macOS backend.
 use crate::Error;
 
+/// Resolves a catalog path against an HTTPS source origin. GitHub Releases
+/// download endpoints flatten `/` separators in asset names to `-`.
+pub fn catalog_url(source: &str, path: &str) -> String {
+    if source.ends_with("/releases/latest/download") || source.contains("/releases/download/") {
+        format!("{source}/{}", path.replace('/', "-"))
+    } else {
+        format!("{source}/{path}")
+    }
+}
+
 /// Tries each source in order and returns the first catalog that verifies.
 /// Any failure moves on to the next source. When all fail, a verification
 /// failure is reported in preference to a network failure: it says more.
@@ -13,7 +23,7 @@ pub fn first_verified<T>(
 ) -> Result<T, Error> {
     let mut failure = None;
     for source in sources {
-        match get(&format!("{source}/{path}")).and_then(|bytes| verify(&bytes)) {
+        match get(&catalog_url(source, path)).and_then(|bytes| verify(&bytes)) {
             Ok(value) => return Ok(value),
             Err(error) => {
                 if failure.is_none_or(|first| first == Error::Network) {
@@ -25,8 +35,8 @@ pub fn first_verified<T>(
     Err(failure.unwrap_or(Error::NotConfigured))
 }
 
-/// GET with no redirects for catalogs; packages may follow HTTPS redirects to
-/// their CDN. `progress` receives (received, expected) as bytes arrive.
+/// GET with validated HTTPS redirects (required for GitHub Releases CDN hops).
+/// `progress` receives (received, expected) as bytes arrive.
 #[cfg(feature = "http")]
 pub fn get(url: &str, limit: u64, package: bool, progress: &mut dyn FnMut(u64, u64)) -> Result<Vec<u8>, Error> {
     get_until(url, limit, package, &mut |received, expected| {
@@ -44,17 +54,14 @@ pub fn get_until(
     progress: &mut dyn FnMut(u64, u64) -> bool,
 ) -> Result<Vec<u8>, Error> {
     use std::{io::Read, time::Duration};
-    let policy = if package {
-        reqwest::redirect::Policy::custom(|attempt| {
-            if crate::feed::validate_redirect(attempt.url().as_str(), attempt.previous().len()).is_ok() {
-                attempt.follow()
-            } else {
-                attempt.stop()
-            }
-        })
-    } else {
-        reqwest::redirect::Policy::none()
-    };
+    let _ = package;
+    let policy = reqwest::redirect::Policy::custom(|attempt| {
+        if crate::feed::validate_redirect(attempt.url().as_str(), attempt.previous().len()).is_ok() {
+            attempt.follow()
+        } else {
+            attempt.stop()
+        }
+    });
     // The client timeout bounds connecting and each read, not the whole body,
     // so a slow but live download is never cut off.
     let client = reqwest::blocking::Client::builder()
@@ -142,6 +149,23 @@ mod tests {
         assert_eq!(
             first_verified(&[], "p", |_| Ok(vec![]), |_| Ok(())),
             Err(Error::NotConfigured)
+        );
+    }
+    #[test]
+    fn github_releases_origin_flattens_catalog_asset_name() {
+        assert_eq!(
+            catalog_url(
+                "https://github.com/shuozhang7979/LogitechFlow/releases/latest/download",
+                "mac/v2/mac-2026-01/arm64/stable/manifest.json"
+            ),
+            "https://github.com/shuozhang7979/LogitechFlow/releases/latest/download/mac-v2-mac-2026-01-arm64-stable-manifest.json"
+        );
+        assert_eq!(
+            catalog_url(
+                "https://raw.githubusercontent.com/shuozhang7979/LogitechFlow/built-installers/feed",
+                "mac/v2/mac-2026-01/arm64/stable/manifest.json"
+            ),
+            "https://raw.githubusercontent.com/shuozhang7979/LogitechFlow/built-installers/feed/mac/v2/mac-2026-01/arm64/stable/manifest.json"
         );
     }
 }

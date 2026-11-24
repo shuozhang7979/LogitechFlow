@@ -308,7 +308,7 @@ fn compiled_feed_origin_has_no_runtime_override_and_test_assets_stay_loopback() 
     {
         assert_eq!(
             manifest_url(),
-            "https://updates.oink.hachiwii.com/windows/v1/win-2026-01/stable/manifest.json"
+            "https://github.com/shuozhang7979/LogitechFlow/releases/latest/download/windows-v1-win-2026-01-stable-manifest.json"
         );
         assert!(
             validate_package_url("http://127.0.0.1:8765/oink-update-qualification/packages/candidate.msi").is_err()

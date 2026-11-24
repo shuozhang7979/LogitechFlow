@@ -8,7 +8,7 @@ import { preferencesWith } from '../api/update';
 import type { UpdateChannel as Channel, UpdatePreferences as Preferences, UpdateStatus } from '../api/update';
 import { problemText, tr } from '../i18n';
 
-const RELEASES='https://github.com/oinkvm/oink/releases';
+const RELEASES='https://github.com/shuozhang7979/LogitechFlow/releases';
 
 /**
  * Settings → Check for updates. The inline result answers only a check the

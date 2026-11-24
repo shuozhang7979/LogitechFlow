@@ -95,7 +95,7 @@ const localErrors:Partial<Record<UpdateError,MessageKey>>={
   not_writable:'无法在无本机授权的情况下替换此位置的 Oink。',elevation:'管理员授权已取消或失败，Oink 仍在运行。',
 };
 
-const RELEASES='https://github.com/oinkvm/oink/releases';
+const RELEASES='https://github.com/shuozhang7979/LogitechFlow/releases';
 // GitHub's latest-release page skips pre-releases, which the beta channel offers.
 const releasesPage=(channel:UpdateStatus['channel']|undefined)=>channel==='beta'?RELEASES:`${RELEASES}/latest`;
 const openReleases=(channel:UpdateStatus['channel']|undefined)=>{void shell.openUrl(releasesPage(channel)).catch(()=>agent.fail('unavailable'));};
