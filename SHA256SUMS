@@ -1,0 +1,11 @@
+d4828feb531dda3166357fcdcfc674fff74311e0a6a745d2cd5553c1f5db51cb  feed/mac/v2/mac-2026-01/arm64/beta/manifest.json
+8ac275791ad42f09753b93381607d368918afdf9053285739473c77b0e66eded  feed/mac/v2/mac-2026-01/arm64/stable/manifest.json
+f095fd1f000d3e6ede0019c47d83d02af7471fa940b44dcb9b9b4641bf3f92c5  feed/windows/v1/win-2026-01/stable/manifest.json
+7531ef8da12abbe8d6f95bf00a350a529e4199222b18589a3764111d2d8f8fe6  feed/windows/v2/win-2026-01/x64/beta/manifest.json
+03d5faf9d2450d7828112b82b51a3d12cd538896d8a9fb829085c40c3c9c5e39  feed/windows/v2/win-2026-01/x64/stable/manifest.json
+e57df30657d89995c6d6bb5fa16bb91d0c7a8d796991859e807631caa9e23d4c  macos-arm64/Install-Mac.command
+81afcd8110d6a212fbfeeccdfdc1ecf8265594d041eac77c76d750d72fd45869  macos-arm64/Oink-0.3.6-macos-arm64.dmg
+e1715d9c09f98a279aabf41cea6220f9730a4ac4f11cd9e6f1434b4addc01999  macos-arm64/deskspan
+afbf56a513fa6618f0b82ce7618b30c8b2ede26e24111c3461522e19e01ea027  windows-x64/Install-Windows.cmd
+1e1d5eb526ae0aa5d4baa7a22624814d7e9a6fdf523d4c7431d5b149bc9d0707  windows-x64/Oink-0.3.6-windows-x64.msi
+53564e4be0bd075f237355b2d1a7658530f0419bc1616bf25d9b46e9ead0e647  windows-x64/deskspan.exe
