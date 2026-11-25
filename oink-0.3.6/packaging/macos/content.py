@@ -3,7 +3,7 @@ import json
 import plistlib
 import re
 import subprocess
-from signing import private_run, verify_adhoc_signature, verify_signature
+from signing import private_run, verify_adhoc_signature, verify_development_signature, verify_signature
 from provenance import digest, verify_no_builder_paths
 from report_manifest import image_identity
 from localizations import verify_localizations
@@ -11,7 +11,7 @@ from macos_imports import verify_imports
 from versioning import release_version, macos_version_fields
 
 
-def verify_microphone(app, source_tree_sha256, team_id, adhoc=False):
+def verify_microphone(app, source_tree_sha256, team_id, adhoc=False, development=False):
     plugin = app / 'Contents/Resources/AudioPlugin/OinkMicrophone.driver'
     plugin_info = plistlib.loads((plugin / 'Contents/Info.plist').read_bytes())
     if (plugin_info.get('CFBundleIdentifier') != 'com.hachiwii.oink.microphone.driver'
@@ -21,6 +21,8 @@ def verify_microphone(app, source_tree_sha256, team_id, adhoc=False):
         raise RuntimeError('Virtual microphone identity/provenance mismatch')
     if adhoc:
         verify_adhoc_signature(plugin)
+    elif development:
+        verify_development_signature(plugin, team_id)
     else:
         verify_signature(plugin, team_id)
     if not (app / 'Contents/Resources/AudioPlugin/install.sh').is_file():
@@ -82,14 +84,14 @@ def verify_manager_signing_identity(details, backend_id):
         raise RuntimeError('File Provider manager must not share backend Keychain signing identity')
 
 
-def verify_app(app, identity, architecture='arm64', adhoc=False):
+def verify_app(app, identity, architecture='arm64', adhoc=False, development=False):
     verify_imports([app], identity['macos_minimum'])
     if any(app.rglob('*.dSYM')) or any(app.rglob('*.pdb')) or any(app.rglob('*.map')):
         raise RuntimeError('Private symbols must not be embedded in the Mac app')
     b, mac = identity['binaries'], identity['macos']
     info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
     verify_product_name(app, info, identity['name'])
-    group = ('group.' if adhoc else mac['team_id'] + '.') + mac['app_group_suffix']
+    group = ('group.' if adhoc and not development else mac['team_id'] + '.') + mac['app_group_suffix']
     if (info['CFBundleIdentifier'], info['CFBundleExecutable'], info['LSMinimumSystemVersion'],
             info[mac['app_group_key']]) != (identity['bundle_id'], b['backend'], '14.2', group):
         raise RuntimeError('Mac host identity, deployment target or App Group mismatch')
@@ -102,6 +104,8 @@ def verify_app(app, identity, architecture='arm64', adhoc=False):
     ext_info = plistlib.loads((extension / 'Contents/Info.plist').read_bytes())
     if ext_info[mac['app_group_key']] != group or ext_info['LSMinimumSystemVersion'] != '14.2':
         raise RuntimeError('File Provider identity or deployment target mismatch')
+    if ext_info.get('NSExtension', {}).get('NSExtensionFileProviderDocumentGroup') != group:
+        raise RuntimeError('File Provider document group differs from its App Group')
     finder = app / 'Contents/PlugIns/OinkFinderSync.appex'
     finder_info = plistlib.loads((finder / 'Contents/Info.plist').read_bytes())
     paste = app / 'Contents/Helpers/OinkPaste.app'
@@ -121,6 +125,8 @@ def verify_app(app, identity, architecture='arm64', adhoc=False):
                     paste_helper=paste / 'Contents/MacOS/OinkPaste')
     components = []
     for role, binary in binaries.items():
+        if development and not adhoc:
+            verify_development_signature(binary, mac['team_id'])
         signed = private_run('codesign', '-d', '--entitlements', ':-', binary)
         entitlements = plistlib.loads(signed.stdout.encode()) if signed.stdout.strip() else {}
         verify_component_groups(role, entitlements, group)
@@ -151,11 +157,18 @@ def verify_app(app, identity, architecture='arm64', adhoc=False):
     metadata = json.loads((app / 'Contents/Resources' / identity['metadata_file']).read_text())
     from provenance import ROOT
     trust = json.loads((ROOT / 'packaging/update-trust.json').read_bytes())['mac']
-    expected_policy = 'feed-v2' if trust['enabled'] else 'manual-only'
+    expected_policy = 'feed-v2' if trust['enabled'] and not development else 'manual-only'
+    expected_key = None if development else trust['public_key']
     if (metadata['update_policy'] != expected_policy or len(metadata['source_tree_sha256']) != 64 or
-            info.get('SUPublicEDKey') != trust['public_key'] or
-            (trust['enabled'] and not trust['public_key'])):
+            info.get('SUPublicEDKey') != expected_key or
+            (expected_policy == 'feed-v2' and not expected_key)):
         raise RuntimeError('Mac package provenance or update trust mismatch')
+    if development:
+        expected_signing = 'development-staging' if adhoc else 'apple-development'
+        if metadata.get('signing') != expected_signing or metadata.get('team_id') != mac['team_id']:
+            raise RuntimeError('Development package mode or Team ID mismatch')
+        if any(app.rglob('*.provisionprofile')) or any(app.rglob('*.mobileprovision')):
+            raise RuntimeError('Local Apple Development packages must not embed a provisioning profile')
     if metadata['version'] != release_version(identity['version'], metadata.get('source_commit'), metadata['build']):
         raise RuntimeError('Mac display version differs from the release build')
     for bundle_info in (info, ui, ext_info, finder_info, paste_info):
@@ -173,9 +186,11 @@ def verify_app(app, identity, architecture='arm64', adhoc=False):
         raise RuntimeError('Mac crash report manifest differs from shipped images')
     if (app / 'Contents/Frameworks').exists():
         raise RuntimeError('Mac app must not embed frameworks (Sparkle was removed)')
-    verify_microphone(app, metadata['source_tree_sha256'], mac['team_id'], adhoc=adhoc)
+    verify_microphone(app, metadata['source_tree_sha256'], mac['team_id'], adhoc=adhoc, development=development)
     if adhoc:
         verify_adhoc_signature(app)
+    elif development:
+        verify_development_signature(app, mac['team_id'], deep=True)
     else:
         verify_signature(app, mac['team_id'])
     return components

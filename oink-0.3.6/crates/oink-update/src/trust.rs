@@ -29,10 +29,12 @@ struct Mac {
     public_key: Option<String>,
 }
 const CONFIG: &[u8] = include_bytes!("../../../packaging/update-trust.json");
+// Locally signed Mac builds must keep their own signing team and File Provider group.
+const LOCAL_MACOS_DEVELOPMENT: bool = option_env!("OINK_MACOS_DEVELOPMENT").is_some();
 
 /// Release qualification is independent of whether Sparkle was linked or a key installed.
 pub fn mac_enabled() -> bool {
-    mac_configured(CONFIG).is_ok()
+    !LOCAL_MACOS_DEVELOPMENT && mac_configured(CONFIG).is_ok()
 }
 fn mac_configured(raw: &[u8]) -> Result<(), Error> {
     let config: Config = crate::feed::strict_json(raw)?;
@@ -73,6 +75,9 @@ fn configured_sources(raw: &[u8]) -> Result<Vec<String>, Error> {
 }
 /// The macOS update key signs both v2 catalogs and the DMG bytes they name.
 pub fn mac_compiled() -> Result<MacRoots, Error> {
+    if LOCAL_MACOS_DEVELOPMENT {
+        return Err(Error::NotConfigured);
+    }
     #[cfg(feature = "test-feed")]
     {
         let _: Config = crate::feed::strict_json(CONFIG)?;

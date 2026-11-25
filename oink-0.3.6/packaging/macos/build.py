@@ -19,7 +19,7 @@ from identity import artifact_stem
 import package_notes
 from payload import copy_notices
 from report_manifest import write_manifest, image_identity
-from signing import private_run, select_identity, notarize, staple_and_validate, awake_for_signing
+from signing import private_run, select_identity, sign_app, notarize, staple_and_validate, awake_for_signing
 from localizations import DECLARATIONS, STRINGS, write_localizations
 from macos_imports import verify_imports
 from macos_launch_smoke import launch_smoke
@@ -81,13 +81,20 @@ def main():
     p.add_argument('--build', type=int, required=True)
     p.add_argument('--source-tree-sha256', required=True)
     p.add_argument('--signing-fingerprint', default=os.environ.get('MACOS_SIGNING_FINGERPRINT'))
-    p.add_argument('--adhoc', action='store_true', help='Sign ad-hoc (-) without a Developer ID certificate')
+    signing = p.add_mutually_exclusive_group()
+    signing.add_argument('--adhoc', action='store_true', help='Sign ad-hoc (-) without a Developer ID certificate')
+    signing.add_argument('--prepare-development', metavar='TEAM_ID', help='Stage for local Apple Development signing')
     p.add_argument('--team', default=os.environ.get('OINK_MACOS_TEAM_ID') or I['macos']['team_id'])
     p.add_argument('--notary-profile', default=os.environ.get('NOTARY_PROFILE'))
     p.add_argument('--notary-timeout', type=int, default=300)
     p.add_argument('--notary-keychain', type=Path, help='Optional non-default keychain containing the notary profile')
     p.add_argument('--tool-cache', type=Path, required=True, help='Pinned packaging tools (dmgbuild)')
     a = p.parse_args()
+    development = a.prepare_development is not None
+    if development:
+        if a.signing_fingerprint or a.notary_profile or a.notary_keychain:
+            p.error('development staging uses no signing certificate or notary credentials')
+        a.team = a.prepare_development
     if not a.adhoc and not re.fullmatch(r'[A-Z0-9]{10}', a.team):
         p.error('team must be a 10-character Apple Developer Team ID')
     native_arch = 'x86_64' if a.arch == 'x64' else 'arm64'
@@ -100,11 +107,14 @@ def main():
     except ValueError as error:
         p.error(str(error))
     trust = json.loads((ROOT / 'packaging/update-trust.json').read_text())
-    if trust['mac']['enabled'] and not trust['mac']['public_key']:
+    if not development and trust['mac']['enabled'] and not trust['mac']['public_key']:
         p.error('enabled Mac updates require the compiled Mac update public key')
-    a.update_public_key = trust['mac']['public_key']
-    a.identity = '-' if a.adhoc else select_identity(a.team, a.signing_fingerprint)
+    a.update_public_key = None if development else trust['mac']['public_key']
+    adhoc_signature = a.adhoc or development
+    a.identity = '-' if adhoc_signature else select_identity(a.team, a.signing_fingerprint)
     provenance = verify(a.binaries, a.source_tree_sha256, a.version, ('aarch64-apple-darwin' if a.arch == 'arm64' else 'x86_64-apple-darwin'), a.build, a.source_commit)
+    if provenance.get('macos_development', False) is not development:
+        p.error('binary update policy does not match the requested Mac package mode')
     if a.update_public_key:
         try:
             if len(base64.b64decode(a.update_public_key, validate=True)) != 32:
@@ -113,6 +123,9 @@ def main():
             p.error('Mac update Ed25519 public key must be base64 for exactly 32 bytes')
     a.output = a.output.resolve()
     a.output.mkdir(parents=True, exist_ok=True)
+    stem = artifact_stem(a.version, 'macos', a.arch)
+    if development and (a.output / f'{stem}-development-staging.zip').exists():
+        p.error('development staging ZIP already exists; choose a fresh output directory')
     app = a.output / 'staging.noindex' / I['macos']['app']
     if app.exists():
         p.error('output app already exists; choose a fresh output directory')
@@ -208,12 +221,6 @@ def main():
         shutil.copy2(ROOT / 'apps/audio-plugin/install.sh', plugin_payload / 'install.sh')
         generated = tmp / 'ReleaseIdentity.swift'
         write_swift_identity(generated, a.team, adhoc=a.adhoc)
-        host = {'com.apple.security.application-groups': [group], 'com.apple.security.device.audio-input': True}
-        plist(tmp / 'host.plist', host)
-        plist(tmp / 'paste-host.plist', {'com.apple.security.application-groups': [group]})
-        plist(tmp / 'finder.plist', {'com.apple.security.application-groups': [group], 'com.apple.security.app-sandbox': True})
-        plist(tmp / 'extension.plist', {'com.apple.security.application-groups': [group],
-              'com.apple.security.app-sandbox': True, 'com.apple.security.network.client': True})
         manager = dict(CFBundleIdentifier=I['bundle_id'], CFBundleName=I['name'], **macos_version_fields(a.version, a.build))
         manager[I['macos']['app_group_key']] = group
         plist(tmp / 'manager.plist', manager)
@@ -289,6 +296,9 @@ def main():
                       architecture=a.arch, minimum_os=I['macos_minimum'], protocol_baseline=1,
                       signing='adhoc' if a.adhoc else 'developer-id', notarization='see detached release record',
                       update_policy='feed-v2' if trust['mac']['enabled'] else 'manual-only')
+        if development:
+            record.update(signing='development-staging', notarization='not-submitted',
+                          update_policy='manual-only', team_id=a.team)
         # The v1 appcast ZIP below is signed with the same key for <=0.3.5 clients.
         record['sparkle'] = dict(included=False, public_key_configured=bool(a.update_public_key))
         (resources / I['metadata_file']).write_text(json.dumps(record, indent=2) + '\n')
@@ -298,26 +308,19 @@ def main():
         verify_imports([app], I['macos_minimum'])
 
         with awake_for_signing():
-            def sign(path, identifier, entitlements=None):
-                args = ['codesign', '--force', '--options', 'runtime', *([] if a.adhoc else ['--timestamp']), '--sign', a.identity, '--identifier', identifier]
-                if entitlements:
-                    args += ['--entitlements', str(entitlements)]
-                private_run(*args, path)
-            sign(plugin, 'com.hachiwii.oink.microphone.driver')
-            sign(finder, I['bundle_id'] + '.findersync', tmp / 'finder.plist')
-            sign(paste_helper, I['bundle_id'] + '.paste', tmp / 'paste-host.plist')
-            sign(ext, I['macos']['file_provider_id'], tmp / 'extension.plist')
-            # Classic Keychain trusted-application ACLs compare signing identity.
-            # The manager must not share the credential-owning backend's identity.
-            sign(mac / b['file_provider_manager'], I['bundle_id'] + '.file-provider-manager', tmp / 'host.plist')
-            sign(helper, I['macos']['ui_id'])
-            sign(mac / b['agent'], I['macos']['agent_id'])
-            sign(mac / b['crash_collector'], I['bundle_id'] + '.crash-collector')
-            sign(app, I['bundle_id'], tmp / 'host.plist')
+            sign_app(app, I, group, a.identity, timestamp=not adhoc_signature)
             from content import verify_app
             effective_identity = {**I, 'macos': {**I['macos'], 'team_id': a.team}}
-            record['components'] = verify_app(app, effective_identity, native_arch, adhoc=a.adhoc)
+            record['components'] = verify_app(app, effective_identity, native_arch,
+                                              adhoc=adhoc_signature, development=development)
             run('node', ROOT / 'build-support/check-package-licenses.mjs', app, 'macos-' + a.arch, cwd=ROOT)
+            if development:
+                # Staging has no team signature yet and cannot exercise the App Group.
+                archive = a.output / f'{stem}-development-staging.zip'
+                run('ditto', '-c', '-k', '--norsrc', '--keepParent', app, archive)
+                shutil.rmtree(app)
+                (a.output / 'SHA256SUMS').write_text(f'{digest(archive)}  {archive.name}\n')
+                return
             # Exercise the shipping signature, hardened runtime and embedded loader
             # before notarization. Private smoke state never contacts the user host.
             backend = mac / b['backend']
@@ -341,7 +344,6 @@ def main():
                 if app_notary['status'] == 'Accepted':
                     staple_and_validate(app)
                     app_notary['stapled'] = True
-            stem = artifact_stem(a.version, 'macos', a.arch)
             dmg = a.output / f'{stem}.dmg'
             from dmg import create
             create(app, dmg, a.tool_cache)

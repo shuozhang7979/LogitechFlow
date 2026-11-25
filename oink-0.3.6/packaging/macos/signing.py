@@ -1,10 +1,14 @@
 """Developer ID selection and notarization with no certificate subject output."""
 from contextlib import contextmanager
+import base64
+import hashlib
 import json
 import os
 from pathlib import Path
+import plistlib
 import re
 import subprocess
+import tempfile
 import time
 
 
@@ -50,6 +54,84 @@ def select_identity(team, fingerprint=None):
     if len(matches) != 1:
         raise RuntimeError('Expected one existing Developer ID Application certificate for the configured Team ID; select its fingerprint explicitly if needed')
     return matches[0]
+
+
+def development_identity(team=None, fingerprint=None):
+    if team and not re.fullmatch(r'[A-Z0-9]{10}', team):
+        raise ValueError('expected a 10-character Apple Team ID')
+    if fingerprint and not re.fullmatch(r'[0-9A-Fa-f]{40}', fingerprint):
+        raise ValueError('signing fingerprint must be a SHA1 certificate fingerprint')
+    identities = private_run('security', 'find-identity', '-v', '-p', 'codesigning').stdout
+    fingerprints = {
+        sha.upper() for sha in re.findall(r'\b([0-9A-Fa-f]{40})\s+"Apple Development: [^"]+"', identities)
+        if fingerprint is None or sha.upper() == fingerprint.upper()
+    }
+    if not fingerprints:
+        raise RuntimeError('No valid Apple Development signing identity; create one in Xcode first')
+    certificates = private_run('security', 'find-certificate', '-a', '-c', 'Apple Development', '-p').stdout
+    matches = set()
+    for payload in re.findall(r'-----BEGIN CERTIFICATE-----\s*([A-Za-z0-9+/=\s]+?)-----END CERTIFICATE-----', certificates):
+        der = base64.b64decode(payload)
+        sha = hashlib.sha1(der).hexdigest().upper()
+        if sha not in fingerprints:
+            continue
+        # The name's parenthetical ID is a team member ID. The certificate OU is the team ID.
+        subject = subprocess.run(['/usr/bin/openssl', 'x509', '-inform', 'DER', '-noout',
+                                  '-subject', '-nameopt', 'sep_multiline'], input=der, capture_output=True)
+        if subject.returncode != 0:
+            raise RuntimeError('Unable to read the Apple Development certificate subject')
+        units = re.findall(r'^\s*OU\s*=\s*([A-Z0-9]{10})\s*$', subject.stdout.decode('utf-8'), re.MULTILINE)
+        if len(units) == 1 and (team is None or team == units[0]):
+            matches.add((sha, units[0]))
+    if len(matches) != 1:
+        raise RuntimeError('Expected one valid Apple Development identity for this team; specify its fingerprint if needed')
+    return matches.pop()
+
+
+def sign_app(app, identity, group, certificate, timestamp=False):
+    mac = app / 'Contents/MacOS'
+    helpers = app / 'Contents/Helpers'
+    plugins = app / 'Contents/PlugIns'
+    bundle = identity['bundle_id']
+    b = identity['binaries']
+    app_group = {'com.apple.security.application-groups': [group]}
+    sandbox = {**app_group, 'com.apple.security.app-sandbox': True}
+    host = {**app_group, 'com.apple.security.device.audio-input': True}
+    components = [
+        (app / 'Contents/Resources/AudioPlugin/OinkMicrophone.driver', bundle + '.microphone.driver', {}),
+        (plugins / 'OinkFinderSync.appex', bundle + '.findersync', sandbox),
+        (helpers / 'OinkPaste.app', bundle + '.paste', app_group),
+        (plugins / identity['macos']['file_provider_bundle'], identity['macos']['file_provider_id'],
+         {**sandbox, 'com.apple.security.network.client': True}),
+        # Keep a separate identity from the backend that owns the classic Keychain ACL.
+        (mac / b['file_provider_manager'], bundle + '.file-provider-manager', host),
+        (helpers / 'Oink.app', identity['macos']['ui_id'], {}),
+        (mac / b['agent'], identity['macos']['agent_id'], {}),
+        (mac / b['crash_collector'], bundle + '.crash-collector', {}),
+        (app, bundle, host),
+    ]
+    with tempfile.TemporaryDirectory(prefix='oink-entitlements-') as temporary:
+        for component, identifier, entitlements in components:
+            arguments = ['codesign', '--force', '--options', 'runtime',
+                         '--timestamp' if timestamp else '--timestamp=none',
+                         '--sign', certificate, '--identifier', identifier]
+            if entitlements:
+                declarations = Path(temporary) / (identifier + '.plist')
+                declarations.write_bytes(plistlib.dumps(entitlements))
+                arguments += ['--entitlements', declarations]
+            private_run(*arguments, component)
+
+
+def verify_development_signature(path, team, deep=False):
+    args = ['codesign', '--verify', '--strict', '-R', '=anchor apple generic']
+    if deep:
+        args.append('--deep')
+    private_run(*args, path)
+    details = private_run('codesign', '-dvv', path).stderr.splitlines()
+    if (not any(line.startswith('Authority=Apple Development:') for line in details)
+            or f'TeamIdentifier={team}' not in details
+            or not any(line.startswith('CodeDirectory ') and 'runtime' in line for line in details)):
+        raise RuntimeError(f'Apple Development authority, Team ID, or hardened runtime mismatch: {Path(path).name}')
 
 
 def verify_signature(path, team):

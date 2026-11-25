@@ -46,11 +46,19 @@ def main():
     p.add_argument('--version', default=IDENTITY['version'])
     p.add_argument('--source-commit', help='Full source commit for a in-house build-labelled version')
     p.add_argument('--build', required=True)
+    p.add_argument('--macos-development', action='store_true', help='Build for local Apple Development signing with manual updates')
     p.add_argument('--windows-update-test-feed', help='TEST ONLY: compile a literal HTTP loopback feed and public TEST key')
     p.add_argument('--symbols-output', type=Path, help='Private symbols outside the source and package payload')
     p.add_argument('--windows-update-test-fail-health', action='store_true', help='TEST ONLY: withhold candidate health proof for rollback qualification')
     a = p.parse_args()
     environment = os.environ.copy()
+    macos = a.target.endswith('-apple-darwin')
+    if a.macos_development and not macos:
+        p.error('local Apple Development builds require a Mac target')
+    if 'OINK_MACOS_DEVELOPMENT' in environment and not a.macos_development:
+        p.error('the Mac development environment requires the matching explicit build flag')
+    if a.macos_development:
+        environment['OINK_MACOS_DEVELOPMENT'] = '1'
     try:
         test_origin(a.windows_update_test_feed)
     except ValueError as error:
@@ -117,7 +125,6 @@ def main():
     features = 'custom-protocol'
     if a.windows_update_test_feed:
         features += ',oink-winsvc/test-feed'
-    macos = a.target.endswith('-apple-darwin')
     if macos:
         # rustc must gather native objects while its LTO temporary directories
         # still exist; running dsymutil later loses their debug information.
@@ -176,6 +183,8 @@ def main():
                   update_test_feed=a.windows_update_test_feed, update_test_fail_health=a.windows_update_test_fail_health,
                   identity_sha256=digest(ROOT / 'packaging/identity.json'),
                   files={name: digest(output / name) for name in names})
+    if a.macos_development:
+        record['macos_development'] = True
     (output / 'release-build.json').write_text(json.dumps(record, indent=2) + '\n')
 
 

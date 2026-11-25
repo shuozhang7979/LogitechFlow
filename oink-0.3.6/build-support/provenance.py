@@ -99,7 +99,10 @@ def source_tree_sha256(root=ROOT, inventory=None):
 
 def digest(path):
     with path.open('rb') as f:
-        return hashlib.file_digest(f, 'sha256').hexdigest()
+        checksum = hashlib.sha256()
+        for chunk in iter(lambda: f.read(1024 * 1024), b''):
+            checksum.update(chunk)
+        return checksum.hexdigest()
 
 
 def verify_no_builder_paths(path, directories=None):

@@ -2,7 +2,9 @@
 
 一套键鼠控制同一局域网里的多台 Windows 和 Mac，每台电脑可以有多块显示器。鼠标越过桌面边缘时键盘跟随切换。可以把文件从资源管理器直接拖到访达中的文件夹，也可以在一端复制文本或图片，到另一端粘贴。
 
-DeskSpan 0.1.0 是独立的开源下游项目。键鼠、剪贴板、原生文件拖放和日常图形界面由 Oink 0.3.6 提供。DeskSpan 新增中文多屏排列向导、组内设备状态查询和批量布局命令，通过已安装的本机代理保存布局。[上游功能与兼容性](https://github.com/oinkvm/oink/blob/v0.3.6/README.zh-CN.md)
+本仓库的定制 Oink 运行时基于上游 Oink 0.3.6。定制版本从 1.0.0 起算，当前版本为 1.0.1。
+
+DeskSpan 0.1.0 是独立的开源下游项目。键鼠、剪贴板、原生文件拖放和日常图形界面由 Oink 提供。DeskSpan 新增中文多屏排列向导、组内设备状态查询和批量布局命令，通过已安装的本机代理保存布局。[上游功能与兼容性](https://github.com/oinkvm/oink/blob/v0.3.6/README.zh-CN.md)
 
 ## 在每台电脑上安装
 
@@ -41,6 +43,29 @@ Windows 运行时支持 x64 的 Windows 10 1809 及以上、Windows 11。Mac 需
 `row` 按从左到右的顺序排列，`column` 按从上到下的顺序排列，也可一次列出三台或更多电脑。默认打印预览，`--apply` 将所有位置作为一次布局编辑提交。安装位置自定义时，可用 `--agent` 指定 `oink-agent` 的完整路径。
 
 ## 二次开发和分发
+
+### Apple 芯片 Mac 的自用签名
+
+在 Xcode 的 **Settings → Accounts → Personal Team → Manage Certificates** 中创建免费的 **Apple Development** 证书。签名使用本机钥匙串中的证书及私钥。在仓库根目录运行下列命令读取对应的 Team ID。
+
+```sh
+python3 oink-0.3.6/packaging/macos/sign_development.py --print-team-id
+```
+
+在 GitHub Actions 中运行 **Build Oink for local Mac signing**，输入该 Team ID。也可以推送 `codex/oink-personal-macos-<TEAMID>` 分支来触发构建。下载运行生成的 `oink-macos-arm64-development-staging` 产物，其中包含暂存 ZIP 和 `SHA256SUMS`。
+
+在仓库根目录运行以下命令。`--sha256` 填入上一步 `SHA256SUMS` 中该 ZIP 的校验值，`--output` 指向新的输出目录。
+
+```sh
+python3 oink-0.3.6/packaging/macos/sign_development.py \
+  --archive "$HOME/Downloads/Oink-1.0.1-macos-arm64-development-staging.zip" \
+  --sha256 '<SHA-256>' --team '<TEAMID>' \
+  --output "$HOME/Downloads/Oink-1.0.1-personal"
+```
+
+把签名后的 `Oink.app` 安装到「应用程序」，按权限引导启用文件提供服务。`/Applications/Oink.app/Contents/MacOS/oink-agent file-provider status` 可查看扩展状态。与 Windows 重新配对后，用大文件分别验证访达粘贴和拖拽。自用构建通过此流程更新，正式分发的 Mac 安装包使用 Developer ID 签名和 Apple 公证。
+
+### DeskSpan 命令行和安装包
 
 DeskSpan 的源代码在平台 ZIP 所附的 `DeskSpan-0.1.0-source.zip` 中，也可以单独获取同名源码包。在源码根目录使用 Go 1.22 或以上及 Python 3.9 或以上运行以下命令。发行脚本使用 Go 标准库交叉编译三个平台包。
 

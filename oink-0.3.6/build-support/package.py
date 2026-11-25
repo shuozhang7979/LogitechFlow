@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import sys
 from provenance import ROOT, source_inventory, source_tree_sha256
@@ -32,7 +33,9 @@ def main():
     p.add_argument('--source-inventory', type=Path,
                    help='Portable source modes for an archive without a Git index')
     p.add_argument('--tool-cache', type=Path, default=Path.home() / '.cache/oink-build')
-    p.add_argument('--adhoc', action='store_true', help='Sign Mac package ad-hoc without a Developer ID certificate')
+    signing = p.add_mutually_exclusive_group()
+    signing.add_argument('--adhoc', action='store_true', help='Sign Mac package ad-hoc without a Developer ID certificate')
+    signing.add_argument('--prepare-development', metavar='TEAM_ID', help='Stage a Mac app ZIP for local Apple Development signing')
     p.add_argument('--signing-fingerprint', default=os.environ.get('MACOS_SIGNING_FINGERPRINT'), help='Optional SHA1 of an existing Developer ID certificate')
     p.add_argument('--notary-profile', default=os.environ.get('NOTARY_PROFILE'))
     p.add_argument('--notary-keychain', type=Path)
@@ -40,6 +43,11 @@ def main():
     p.add_argument('--windows-update-test-fail-health', action='store_true', help='TEST ONLY: withhold candidate health proof for rollback qualification')
     p.add_argument('--run-native-tests', action='store_true', help='Run Windows C++/PowerShell tests explicitly')
     a = p.parse_args()
+    if a.prepare_development is not None:
+        if a.platform != 'macos' or not re.fullmatch(r'[A-Z0-9]{10}', a.prepare_development):
+            p.error('--prepare-development requires a Mac target and a 10-character Apple Team ID')
+        if a.signing_fingerprint or a.notary_profile or a.notary_keychain:
+            p.error('development staging uses no signing certificate or notary credentials')
     if a.windows_update_test_fail_health and not a.windows_update_test_feed:
         p.error('test health failure requires a test feed')
     from update_qualification import origin as test_origin
@@ -84,7 +92,7 @@ def main():
     (output / 'build-environment.json').write_text(json.dumps({**tools, 'version': version, 'source_commit': commit}, indent=2) + '\n')
     snapshot.write_text(json.dumps({'schema': 1, 'source_tree_sha256': tree, 'files': inventory}, indent=2) + '\n')
     macos = a.platform == 'macos'
-    if macos and not a.adhoc:
+    if macos and not (a.adhoc or a.prepare_development):
         sys.path.insert(0, str(ROOT / 'packaging/macos'))
         from signing import select_identity
         team_id = os.environ.get('OINK_MACOS_TEAM_ID') or IDENTITY['macos']['team_id']
@@ -97,6 +105,8 @@ def main():
         common += ['--windows-update-test-feed', a.windows_update_test_feed]
     command = [sys.executable, str(ROOT / 'build-support/build.py'), '--target', target,
                '--source-inventory', str(snapshot), '--symbols-output', str(output / 'symbols.noindex'), *common]
+    if a.prepare_development:
+        command += ['--macos-development']
     if a.windows_update_test_fail_health:
         command += ['--windows-update-test-fail-health']
     subprocess.run(command, cwd=ROOT, check=True)
@@ -107,6 +117,8 @@ def main():
         command += ['--arch', a.arch, '--tool-cache', str(a.tool_cache), '--notary-timeout', str(a.notary_timeout)]
         if a.adhoc:
             command += ['--adhoc']
+        if a.prepare_development:
+            command += ['--prepare-development', a.prepare_development]
         for flag, value in [('--signing-fingerprint', a.signing_fingerprint),
                             ('--notary-profile', a.notary_profile), ('--notary-keychain', a.notary_keychain)]:
             if value:
@@ -118,7 +130,7 @@ def main():
     subprocess.run(command, cwd=ROOT, check=True)
     # Public CI uploads in its explicit workflow step; in-house packages use
     # the same uploader and retain symbols even when no token is configured.
-    if not a.public_version:
+    if not a.public_version and not a.prepare_development:
         from upload_symbols import upload
         upload(output / 'symbols.noindex', a.tool_cache)
     print(f'Package complete: {output}')

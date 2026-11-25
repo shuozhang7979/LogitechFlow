@@ -177,10 +177,23 @@ jobs:
           OINK_UPDATE_SIGNING_SEED_HEX: ${{ secrets.OINK_UPDATE_SIGNING_SEED_HEX }}
         run: |
           set -euo pipefail
-          SEQ=$(( GITHUB_RUN_NUMBER + 2 ))
-          TAG="v0.3.6-b${SEQ}"
+          MAC_RECORD="$RUNNER_TEMP/artifacts/oink-macos-arm64/release-macos.json"
+          WIN_RECORD="$RUNNER_TEMP/artifacts/oink-windows-x64/release-windows.json"
+          read -r VERSION BUILD < <(python3 - "$MAC_RECORD" "$WIN_RECORD" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+
+          mac, windows = (json.loads(Path(path).read_text()) for path in sys.argv[1:])
+          if (mac['version'], mac['build']) != (windows['version'], windows['build']):
+              sys.exit('Mac and Windows packages have different release versions or builds')
+          print(mac['version'], mac['build'])
+          PY
+          )
+          TAG="v${VERSION}-b$(( BUILD % 1000 ))"
           echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
-          echo "RELEASE_SEQ=${SEQ}" >> "$GITHUB_ENV"
+          echo "RELEASE_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "RELEASE_BUILD=${BUILD}" >> "$GITHUB_ENV"
 
           OUT="$RUNNER_TEMP/release-assets"
           FEED_TREE="$RUNNER_TEMP/feed-tree"
@@ -199,9 +212,9 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --tag "$TAG" \
             --mac-dmg "$MAC_DMG" \
-            --mac-record "$RUNNER_TEMP/artifacts/oink-macos-arm64/release-macos.json" \
+            --mac-record "$MAC_RECORD" \
             --win-msi "$WIN_MSI" \
-            --win-record "$RUNNER_TEMP/artifacts/oink-windows-x64/release-windows.json" \
+            --win-record "$WIN_RECORD" \
             --flat-output "$OUT" \
             --tree-output "$FEED_TREE"
 
@@ -255,12 +268,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Keep v0.3.6-flow updated for existing bookmarks (not marked latest)
-          if gh release view "v0.3.6-flow" >/dev/null 2>&1; then
-            gh release upload "v0.3.6-flow" "$RUNNER_TEMP/release-assets/"* --clobber
-          fi
-
-          # Publish immutable versioned release marked --latest for in-app auto-updater
+          # Publish the versioned release and mark it latest for the in-app updater.
           TAG="$RELEASE_TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$RUNNER_TEMP/release-assets/"* --clobber
@@ -268,8 +276,8 @@ jobs:
           else
             gh release create "$TAG" "$RUNNER_TEMP/release-assets/"* \
               --latest \
-              --title "LogitechFlow 0.3.6 (Build $(( 306000 + RELEASE_SEQ )))" \
-              --notes "Includes custom-built Oink 0.3.6 (GitHub Releases in-app auto-updater, macOS Dock launch fix, 4 MiB streaming pipeline, real-time HUD & UI transfer monitor) + DeskSpan CLI for macOS arm64 and Windows x64."
+              --title "LogitechFlow ${RELEASE_VERSION} (Build ${RELEASE_BUILD})" \
+              --notes "Includes custom-built Oink ${RELEASE_VERSION} based on upstream Oink 0.3.6, with the DeskSpan CLI for macOS arm64 and Windows x64."
           fi
 
           # Also publish a clean 1-commit `built-installers` branch (including `feed/`)
